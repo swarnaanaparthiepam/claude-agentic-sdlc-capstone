@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import styles from './LoginPage.module.css';
 
 /**
  * LoginPage Component
@@ -45,7 +46,59 @@ export const LoginPage: React.FC = () => {
     setIsLoginSuccessful(true);
   };
 
-  // TODO: Task 6 - implement JSX structure
+  return (
+    <div className={styles.container}>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <h1 className={styles.title}>Login</h1>
 
-  return <div>LoginPage Scaffold</div>;
+        {/* Email Input - FR-1 */}
+        <div className={styles.fieldGroup}>
+          <label htmlFor="email" className={styles.label}>
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={styles.input}
+            data-testid="email-input"
+            autoComplete="email"
+          />
+        </div>
+
+        {/* Password Input - FR-2, NFR-7 */}
+        <div className={styles.fieldGroup}>
+          <label htmlFor="password" className={styles.label}>
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className={styles.input}
+            data-testid="password-input"
+            autoComplete="current-password"
+          />
+        </div>
+
+        {/* Login Button - FR-3 */}
+        <button
+          type="submit"
+          className={styles.button}
+          data-testid="login-button"
+        >
+          Login
+        </button>
+
+        {/* Success Message - FR-5 */}
+        {isLoginSuccessful && (
+          <p className={styles.successMessage} data-testid="success-message">
+            Login successful
+          </p>
+        )}
+      </form>
+    </div>
+  );
 };
