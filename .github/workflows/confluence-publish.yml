@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       user_story_id:
-        description: 'User Story ID (e.g., SCRUM-123)'
+        description: 'User Story ID (e.g., CJS-2)'
         required: true
         type: string
 
@@ -33,9 +33,9 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             USER_STORY_ID="${{ github.event.inputs.user_story_id }}"
           else
-            # Extract from PR title (format: "SCRUM-123: Title")
+            # Extract from PR title (format: "CJS-2: Title")
             PR_TITLE="${{ github.event.pull_request.title }}"
-            USER_STORY_ID=$(echo "$PR_TITLE" | grep -oE "SCRUM-[0-9]+" || echo "")
+            USER_STORY_ID=$(echo "$PR_TITLE" | grep -oE "CJS-[0-9]+" || echo "")
           fi
 
           if [[ -z "$USER_STORY_ID" ]]; then
@@ -66,7 +66,7 @@ jobs:
           CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
           CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
           CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
-          CONFLUENCE_SPACE_KEY: ${{ secrets.CONFLUENCE_SPACE_KEY || 'DEV' }}
+          CONFLUENCE_SPACE_KEY: 'claudecaps'
 
       - name: Commit confluence-status.json
         run: |
@@ -100,3 +100,4 @@ jobs:
           else
             echo "**Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
           fi
+          echo "" >> $GITHUB_STEP_SUMMARY
