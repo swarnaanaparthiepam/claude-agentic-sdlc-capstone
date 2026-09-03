@@ -1,0 +1,102 @@
+name: Publish to Confluence
+
+on:
+  workflow_dispatch:
+    inputs:
+      user_story_id:
+        description: 'User Story ID (e.g., SCRUM-123)'
+        required: true
+        type: string
+
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  publish:
+    name: Publish SDLC Artifacts to Confluence
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Extract User Story ID
+        id: extract_id
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            USER_STORY_ID="${{ github.event.inputs.user_story_id }}"
+          else
+            # Extract from PR title (format: "SCRUM-123: Title")
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            USER_STORY_ID=$(echo "$PR_TITLE" | grep -oE "SCRUM-[0-9]+" || echo "")
+          fi
+
+          if [[ -z "$USER_STORY_ID" ]]; then
+            echo "ERROR: Could not determine User Story ID"
+            exit 1
+          fi
+
+          echo "user_story_id=$USER_STORY_ID" >> $GITHUB_OUTPUT
+          echo "Publishing artifacts for: $USER_STORY_ID"
+
+      - name: Validate artifacts exist
+        run: |
+          USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
+          ARTIFACT_DIR="docs/artifacts/$USER_STORY_ID"
+
+          if [[ ! -d "$ARTIFACT_DIR" ]]; then
+            echo "ERROR: Artifact directory not found: $ARTIFACT_DIR"
+            exit 1
+          fi
+
+          echo "Found artifact directory: $ARTIFACT_DIR"
+          ls -la "$ARTIFACT_DIR"
+
+      - name: Publish to Confluence
+        run: node tools/confluence/publisher.mjs
+        env:
+          USER_STORY_ID: ${{ steps.extract_id.outputs.user_story_id }}
+          CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
+          CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
+          CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
+          CONFLUENCE_SPACE_KEY: ${{ secrets.CONFLUENCE_SPACE_KEY || 'DEV' }}
+
+      - name: Commit confluence-status.json
+        run: |
+          USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
+          STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
+
+          if [[ -f "$STATUS_FILE" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add "$STATUS_FILE"
+            git commit -m "docs: add Confluence publication status for $USER_STORY_ID" || echo "No changes to commit"
+            git push || echo "Nothing to push"
+          fi
+
+      - name: Summary
+        run: |
+          USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
+          STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
+
+          echo "## Publication Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**User Story:** $USER_STORY_ID" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -f "$STATUS_FILE" ]]; then
+            URL=$(jq -r '.url' "$STATUS_FILE")
+            TIMESTAMP=$(jq -r '.timestamp' "$STATUS_FILE")
+            echo "**Status:** ✅ Published" >> $GITHUB_STEP_SUMMARY
+            echo "**URL:** [$URL]($URL)" >> $GITHUB_STEP_SUMMARY
+            echo "**Timestamp:** $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
+          fi

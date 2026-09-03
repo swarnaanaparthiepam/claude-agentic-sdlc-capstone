@@ -1,0 +1,158 @@
+name: Framework Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Framework Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required directories
+        run: |
+          set -e
+
+          echo "Validating required directories..."
+
+          directories=(
+            ".claude/agents"
+            ".claude/skills"
+            ".claude/instructions"
+            ".github/workflows"
+            "docs/artifacts"
+            "tools/dashboard"
+            "tools/confluence"
+          )
+
+          for dir in "${directories[@]}"; do
+            if [[ ! -d "$dir" ]]; then
+              echo "ERROR: Missing directory: $dir"
+              exit 1
+            fi
+            echo "✓ $dir"
+          done
+
+      - name: Validate required files
+        run: |
+          set -e
+
+          echo "Validating required files..."
+
+          files=(
+            ".claude/workflow.md"
+            ".claude/mcp.json"
+            ".claude/instructions/shared.md"
+            ".claude/skills/artifact-validation.md"
+            ".gitignore"
+            ".env.example"
+            "README.md"
+            "CLAUDE.md"
+            "package.json"
+          )
+
+          for file in "${files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "ERROR: Missing file: $file"
+              exit 1
+            fi
+            echo "✓ $file"
+          done
+
+      - name: Validate phase agents
+        run: |
+          set -e
+
+          echo "Validating phase agents..."
+
+          agents=(
+            "00-input.md"
+            "01-requirements.md"
+            "02-architecture.md"
+            "03-design-review.md"
+            "04-planning.md"
+            "05-implementation.md"
+            "06-review.md"
+            "07-verification.md"
+            "08-pr.md"
+          )
+
+          for agent in "${agents[@]}"; do
+            file=".claude/agents/$agent"
+            if [[ ! -f "$file" ]]; then
+              echo "ERROR: Missing agent: $file"
+              exit 1
+            fi
+            echo "✓ $file"
+          done
+
+      - name: Validate dashboard files
+        run: |
+          set -e
+
+          echo "Validating dashboard..."
+
+          if [[ ! -f "tools/dashboard/package.json" ]]; then
+            echo "ERROR: Missing tools/dashboard/package.json"
+            exit 1
+          fi
+
+          if [[ ! -f "tools/dashboard/server.mjs" ]]; then
+            echo "ERROR: Missing tools/dashboard/server.mjs"
+            exit 1
+          fi
+
+          if [[ ! -f "tools/dashboard/index.html" ]]; then
+            echo "ERROR: Missing tools/dashboard/index.html"
+            exit 1
+          fi
+
+          echo "✓ Dashboard files present"
+
+      - name: Validate Confluence publisher
+        run: |
+          set -e
+
+          echo "Validating Confluence publisher..."
+
+          if [[ ! -f "tools/confluence/publisher.mjs" ]]; then
+            echo "ERROR: Missing tools/confluence/publisher.mjs"
+            exit 1
+          fi
+
+          echo "✓ Confluence publisher present"
+
+      - name: Check for hardcoded User Story IDs
+        run: |
+          set -e
+
+          echo "Checking for hardcoded SCRUM IDs..."
+
+          if grep -rE "SCRUM-[0-9]+" .claude/ README.md CLAUDE.md 2>/dev/null | grep -v "Example:"; then
+            echo "ERROR: Found hardcoded SCRUM User Story IDs."
+            echo "Use <USER_STORY_ID> placeholder instead."
+            exit 1
+          fi
+
+          echo "✓ No hardcoded User Story IDs found"
+
+      - name: Validation summary
+        run: |
+          echo ""
+          echo "==========================================="
+          echo "Framework Validation: PASSED"
+          echo "==========================================="
+          echo "✓ Directory structure"
+          echo "✓ Required files"
+          echo "✓ Phase agents (9)"
+          echo "✓ Dashboard"
+          echo "✓ Confluence publisher"
+          echo "✓ No hardcoded IDs"
+          echo "==========================================="

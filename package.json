@@ -1,0 +1,22 @@
+{
+  "name": "claude-agentic-sdlc-capstone",
+  "version": "1.0.0",
+  "description": "Agentic SDLC workflow using Claude Code - Capstone demonstration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dashboard": "node tools/dashboard/server.mjs",
+    "publish:confluence": "node tools/confluence/publisher.mjs"
+  },
+  "keywords": [
+    "agentic-sdlc",
+    "claude-code",
+    "workflow",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "workspaces": [
+    "tools/dashboard"
+  ]
+}

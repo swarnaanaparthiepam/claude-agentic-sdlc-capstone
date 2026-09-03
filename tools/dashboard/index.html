@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SDLC Dashboard</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.55 ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+      padding: 32px 24px 48px;
+    }
+    main { max-width: 880px; margin: 0 auto; }
+    header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    h1 { font-size: 20px; }
+    .story-title { color: var(--muted); }
+    .live {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    .dot.stale { background: var(--danger); animation: none; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+    .card .label {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card .value {
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 6px;
+      word-break: break-word;
+    }
+    .value.ok { color: var(--success); }
+    .value.warn { color: var(--warning); }
+    .value.danger { color: var(--danger); }
+
+    .bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .bar > span {
+      display: block;
+      height: 100%;
+      background: var(--success);
+      transition: width 0.4s ease;
+    }
+
+    ol.phases {
+      list-style: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    ol.phases li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+    }
+    ol.phases li:first-child { border-top: none; }
+    li.active { background: #12233b; box-shadow: inset 3px 0 0 var(--accent); }
+    .marker {
+      width: 18px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .marker.complete { color: var(--success); }
+    .marker.active { color: var(--accent); }
+    .marker.pending { color: var(--muted); }
+    .phase-num { color: var(--muted); font-variant-numeric: tabular-nums; }
+    .phase-name { font-weight: 500; }
+    .artifact {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--muted);
+      font-family: ui-monospace, Consolas, monospace;
+    }
+
+    section.notes {
+      margin-bottom: 24px;
+    }
+    section.notes h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    pre {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      max-height: 320px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font: 12.5px/1.6 ui-monospace, Consolas, monospace;
+      color: var(--muted);
+    }
+    .error { border-color: var(--danger); color: var(--danger); }
+    footer {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1 id="story-id">Loading...</h1>
+      <span class="story-title" id="story-title"></span>
+      <span class="live">
+        <span class="dot" id="dot"></span>
+        <span id="live-text">connecting…</span>
+      </span>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <div class="label">Current Phase</div>
+        <div class="value" id="current-phase">—</div>
+      </div>
+      <div class="card">
+        <div class="label">Pending Approval</div>
+        <div class="value" id="pending">—</div>
+      </div>
+      <div class="card">
+        <div class="label">Blocked Phase</div>
+        <div class="value" id="blocked">—</div>
+      </div>
+      <div class="card">
+        <div class="label">Progress</div>
+        <div class="value" id="progress">—</div>
+      </div>
+    </div>
+
+    <div class="bar"><span id="bar-fill" style="width: 0%"></span></div>
+
+    <ol class="phases" id="phases"></ol>
+
+    <section class="notes">
+      <h2>Status Notes</h2>
+      <pre id="notes">—</pre>
+    </section>
+
+    <footer id="footer">Dashboard starting...</footer>
+  </main>
+
+  <script>
+    const MARKERS = { complete: '✓', active: '●', pending: '○' };
+    const $ = (id) => document.getElementById(id);
+
+    function setLive(text, stale) {
+      $('live-text').textContent = text;
+      $('dot').classList.toggle('stale', Boolean(stale));
+    }
+
+    function renderPhases(phases) {
+      const list = $('phases');
+      list.replaceChildren();
+      for (const phase of phases) {
+        const li = document.createElement('li');
+        li.className = phase.state;
+
+        const marker = document.createElement('span');
+        marker.className = 'marker ' + phase.state;
+        marker.textContent = MARKERS[phase.state];
+
+        const num = document.createElement('span');
+        num.className = 'phase-num';
+        num.textContent = phase.number;
+
+        const name = document.createElement('span');
+        name.className = 'phase-name';
+        name.textContent = phase.name;
+
+        li.append(marker, num, name);
+
+        if (phase.artifact) {
+          const artifact = document.createElement('span');
+          artifact.className = 'artifact';
+          artifact.textContent = phase.artifact;
+          li.append(artifact);
+        }
+        list.append(li);
+      }
+    }
+
+    function render(data) {
+      $('story-id').textContent = data.userStoryId;
+      $('story-title').textContent = data.title ?? '';
+      $('current-phase').textContent = data.currentPhase;
+
+      const pending = $('pending');
+      const hasPending = data.pendingApproval && data.pendingApproval !== 'None';
+      pending.textContent = data.pendingApproval ?? '—';
+      pending.className = 'value ' + (hasPending ? 'warn' : 'ok');
+
+      const blocked = $('blocked');
+      const isBlocked = data.blockedPhase && data.blockedPhase !== 'None';
+      blocked.textContent = data.blockedPhase ?? '—';
+      blocked.className = 'value ' + (isBlocked ? 'danger' : 'ok');
+
+      $('progress').textContent = data.completedCount + ' / ' + data.totalCount + ' phases';
+      $('bar-fill').style.width = (data.completedCount / data.totalCount) * 100 + '%';
+
+      renderPhases(data.phases);
+
+      const notes = $('notes');
+      notes.classList.remove('error');
+      notes.textContent = data.notes || '—';
+
+      $('footer').textContent =
+        'Last updated: ' + new Date(data.fileModified).toLocaleString() +
+        ' • Status: ' + data.status;
+      document.title = data.currentPhase + ' · ' + data.userStoryId + ' Dashboard';
+    }
+
+    async function poll() {
+      try {
+        const response = await fetch('/api/status', { cache: 'no-store' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? 'Request failed');
+        render(data);
+        setLive('live · ' + new Date().toLocaleTimeString(), false);
+      } catch (error) {
+        const notes = $('notes');
+        notes.classList.add('error');
+        notes.textContent = error.message;
+        setLive('disconnected', true);
+      }
+    }
+
+    // Initial poll
+    poll();
+
+    // Poll every 3 seconds
+    setInterval(poll, 3000);
+  </script>
+</body>
+</html>
