@@ -224,11 +224,40 @@ Phase 05 agent will create the application structure, source code, and tests bas
 
 ## Security
 
-- Never commit `.env` file
-- Use GitHub Secrets for CI/CD
-- No credentials in logs or artifacts
-- API tokens stored securely
-- Confluence API token has minimal permissions
+**CRITICAL RULES - NEVER VIOLATE:**
+
+1. **NEVER commit `mcp.json` or `.claude/mcp.json`** - These files contain MCP server credentials and must NEVER be pushed to git
+2. **NEVER commit `.env` files** - Environment variables contain secrets
+3. **Token Masking Policy:** If you discover any token/credential in code:
+   - STOP and do not commit the file
+   - Replace with `!@#$$$#@` or `${ENVIRONMENT_VARIABLE}`
+   - Alert immediately
+   - Use `git filter-branch` to remove from history if already committed
+4. **Always use environment variables** for credentials in config files
+5. **Template Pattern:** Use `.example` files (e.g., `mcp.json.example`) with placeholders
+
+**GitHub Push Protection:**
+- GitHub will block pushes containing detected secrets
+- Do NOT bypass without proper review and remediation
+- See `SECURITY.md` for complete incident response procedures
+
+**What to do if credentials are exposed:**
+1. Revoke the token immediately
+2. Remove from git history using `git filter-branch`
+3. Force push to overwrite remote
+4. Document the incident
+5. See `SECURITY.md` for detailed steps
+
+**Protected Files:**
+- `mcp.json` - MCP server credentials (in .gitignore)
+- `.claude/mcp.json` - Claude MCP config (in .gitignore)
+- `.env` - Environment variables (in .gitignore)
+- `.env.local` - Local overrides (in .gitignore)
+
+**Credential Storage:**
+- Local Development: Use `.env` file (gitignored)
+- CI/CD: Use GitHub Secrets
+- Production: Use secure vault (AWS Secrets Manager, Azure Key Vault)
 
 ## Workflow Completion
 
