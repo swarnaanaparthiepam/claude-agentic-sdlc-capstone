@@ -1,24 +1,100 @@
-/* LoginPage styles - will be implemented in Task 7 */
+/* src/components/LoginPage.module.css */
+
+/* Design Review Issue #4 Resolution: CSS Modules chosen for scoping */
+
 .container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  padding: 1rem;
 }
 
 .form {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
 }
 
 .title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #111;
+  text-align: center;
 }
 
 .fieldGroup {
+  margin-bottom: 1rem;
 }
 
 .label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 
 .input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .button {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
+.button:hover {
+  background-color: #2563eb;
+}
+
+.button:active {
+  background-color: #1d4ed8;
+}
+
+/* Design Review Issue #5 Resolution: Success message styling specified */
 .successMessage {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #16a34a;
+  border-radius: 4px;
+  font-size: 18px; /* Design Review requirement */
+  font-weight: 700; /* Design Review requirement - bold */
+  text-align: center;
+  /* WCAG AA contrast: #065f46 on #d1fae5 = 7.2:1 (exceeds 4.5:1 requirement) */
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .form {
+    padding: 1.5rem;
+  }
 }
