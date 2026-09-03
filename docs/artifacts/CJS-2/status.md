@@ -35,14 +35,16 @@
 - Phase 08 completed: PR created successfully on GitHub!
 
 **PR Information:** 
-- PR URL: https://github.com/swarnaanaparthiepam/claude-agentic-sdlc-capstone/pull/1
-- PR Number: #1
+- PR URL: https://github.com/swarnaanaparthiepam/claude-agentic-sdlc-capstone/pull/2
+- PR Number: #2
 - PR Description: docs/artifacts/CJS-2/pr-description.md
 - Status: Open, awaiting review and merge
 - Feature Branch: feature/CJS-2 (19 commits)
 - Base Branch: master
 - Created: 2026-09-03T23:45:00+0530
-- Security: Git history rewritten to remove hardcoded API tokens
+- Security: Git history rewritten to completely remove mcp.json from all commits
+- Security: Added SECURITY.md and SETUP.md documentation
+- Security: mcp.json now in .gitignore, never to be committed
 
 **Confluence Status:** 
 - Awaiting PR merge and GitHub Action trigger 
