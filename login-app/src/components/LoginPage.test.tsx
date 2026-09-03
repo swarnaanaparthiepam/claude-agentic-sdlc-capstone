@@ -115,3 +115,44 @@ describe('LoginPage - User Interactions', () => {
     expect(successMessage).not.toBeInTheDocument();
   });
 });
+
+describe('LoginPage - Accessibility and Keyboard Navigation', () => {
+  it('submits form on Enter key press in password field', async () => {
+    const user = userEvent.setup();
+    render(<LoginPage />);
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+
+    await user.type(emailInput, 'user@example.com');
+    await user.type(passwordInput, 'password{Enter}');
+
+    const successMessage = screen.getByText('Login successful');
+    expect(successMessage).toBeInTheDocument();
+  });
+
+  it('has correct tab order (email → password → button)', async () => {
+    const user = userEvent.setup();
+    render(<LoginPage />);
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+    const loginButton = screen.getByRole('button', { name: /login/i });
+
+    await user.tab();
+    expect(emailInput).toHaveFocus();
+
+    await user.tab();
+    expect(passwordInput).toHaveFocus();
+
+    await user.tab();
+    expect(loginButton).toHaveFocus();
+  });
+
+  it('labels are properly associated with inputs (htmlFor)', () => {
+    render(<LoginPage />);
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+
+    expect(emailInput).toHaveAttribute('id', 'email');
+    expect(passwordInput).toHaveAttribute('id', 'password');
+  });
+});
