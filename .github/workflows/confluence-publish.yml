@@ -100,3 +100,4 @@ jobs:
           else
             echo "**Status:** ❌ Failed" >> $GITHUB_STEP_SUMMARY
           fi
+          echo "" >> $GITHUB_STEP_SUMMARY
