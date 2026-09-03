@@ -14,8 +14,8 @@ This is an Agentic SDLC Capstone project demonstrating a complete 8-phase Softwa
 - Stateless between invocations (state in `status.md`)
 - Never auto-advances through phases
 
-### Phase Agents (9 agents)
-- `00-input.md` through `08-pr.md`
+### Phase Agents (10 agents)
+- `00-input.md` through `09-confluence.md`
 - **Support TWO invocation modes:**
   1. **Workflow Mode:** Invoked BY workflow.md with orchestration
   2. **Standalone Mode:** Can be invoked directly by users
@@ -176,16 +176,19 @@ docs/artifacts/<USER_STORY_ID>/
 ## Phase Sequence
 
 ```
-00: Input          → user-story.md      → APPROVAL
-01: Requirements   → requirements.md    → APPROVAL
-02: Architecture   → architecture.md    → APPROVAL
-03: Design Review  → design-review.md   → APPROVAL
-04: Planning       → impl-plan.md       → APPROVAL
-05: Implementation → code + tests       → APPROVAL
-06: Review         → review.md          → APPROVAL
-07: Verification   → verification.md    → APPROVAL
-08: PR             → GitHub PR          → COMPLETE
+00: Input                 → user-story.md          → APPROVAL
+01: Requirements          → requirements.md        → APPROVAL
+02: Architecture          → architecture.md        → APPROVAL
+03: Design Review         → design-review.md       → APPROVAL
+04: Planning              → impl-plan.md           → APPROVAL
+05: Implementation        → code + tests           → APPROVAL
+06: Review                → review.md              → APPROVAL
+07: Verification          → verification.md        → APPROVAL
+08: PR                    → GitHub PR              → APPROVAL (wait for merge)
+09: Confluence Publishing → confluence-status.json → COMPLETE
 ```
+
+**Note:** Phase 09 is OPTIONAL. Projects without Confluence can stop at Phase 08.
 
 ## Recovery Scenarios
 
@@ -224,11 +227,40 @@ Phase 05 agent will create the application structure, source code, and tests bas
 
 ## Security
 
-- Never commit `.env` file
-- Use GitHub Secrets for CI/CD
-- No credentials in logs or artifacts
-- API tokens stored securely
-- Confluence API token has minimal permissions
+**CRITICAL RULES - NEVER VIOLATE:**
+
+1. **NEVER commit `mcp.json` or `.claude/mcp.json`** - These files contain MCP server credentials and must NEVER be pushed to git
+2. **NEVER commit `.env` files** - Environment variables contain secrets
+3. **Token Masking Policy:** If you discover any token/credential in code:
+   - STOP and do not commit the file
+   - Replace with `!@#$$$#@` or `${ENVIRONMENT_VARIABLE}`
+   - Alert immediately
+   - Use `git filter-branch` to remove from history if already committed
+4. **Always use environment variables** for credentials in config files
+5. **Template Pattern:** Use `.example` files (e.g., `mcp.json.example`) with placeholders
+
+**GitHub Push Protection:**
+- GitHub will block pushes containing detected secrets
+- Do NOT bypass without proper review and remediation
+- See `SECURITY.md` for complete incident response procedures
+
+**What to do if credentials are exposed:**
+1. Revoke the token immediately
+2. Remove from git history using `git filter-branch`
+3. Force push to overwrite remote
+4. Document the incident
+5. See `SECURITY.md` for detailed steps
+
+**Protected Files:**
+- `mcp.json` - MCP server credentials (in .gitignore)
+- `.claude/mcp.json` - Claude MCP config (in .gitignore)
+- `.env` - Environment variables (in .gitignore)
+- `.env.local` - Local overrides (in .gitignore)
+
+**Credential Storage:**
+- Local Development: Use `.env` file (gitignored)
+- CI/CD: Use GitHub Secrets
+- Production: Use secure vault (AWS Secrets Manager, Azure Key Vault)
 
 ## Workflow Completion
 
