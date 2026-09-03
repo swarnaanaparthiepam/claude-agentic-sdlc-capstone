@@ -22,7 +22,29 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [isLoginSuccessful, setIsLoginSuccessful] = useState<boolean>(false);
 
-  // TODO: Task 5 - implement handleSubmit
+  /**
+   * Handles form submission with mock authentication logic.
+   *
+   * Implements basic non-empty validation (Design Review Decision #1).
+   * Uses <form onSubmit> pattern for accessibility (Design Review Issue #1).
+   * Mock logic always succeeds if validation passes (FR-6).
+   *
+   * Architecture: ADR-003 (inline mock logic), ADR-007 (basic validation)
+   */
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+
+    // Basic non-empty validation (Design Review Decision #1)
+    if (!email.trim() || !password.trim()) {
+      // Validation fails - do nothing (could add error message in future)
+      return;
+    }
+
+    // Mock authentication logic (FR-6) - always succeeds
+    // No HTTP request, no database call (FR-7)
+    setIsLoginSuccessful(true);
+  };
+
   // TODO: Task 6 - implement JSX structure
 
   return <div>LoginPage Scaffold</div>;
