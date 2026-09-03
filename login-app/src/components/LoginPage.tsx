@@ -11,13 +11,6 @@ import styles from './LoginPage.module.css';
  * Architecture: ADR-001 (Functional components), ADR-002 (No state management library),
  *               ADR-003 (Mock logic inline)
  */
-
-interface LoginFormState {
-  email: string;
-  password: string;
-  isLoginSuccessful: boolean;
-}
-
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
