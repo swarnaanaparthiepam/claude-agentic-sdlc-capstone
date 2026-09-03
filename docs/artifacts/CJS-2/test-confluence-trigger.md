@@ -20,3 +20,5 @@ The `.github/workflows/confluence-publish.yml` workflow should:
 - Detect CJS-2 artifacts in `docs/artifacts/CJS-2/`
 - Publish content to Confluence
 - Update `confluence-status.json` with publication metadata
+
+<!-- Updated: Testing automatic workflow trigger on PR merge -->
