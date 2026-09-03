@@ -1,0 +1,36 @@
+{
+  "published": false,
+  "status": "READY_FOR_MANUAL_PUBLICATION",
+  "reason": "Confluence MCP tools not available in current Claude Code environment",
+  "confluenceUrl": null,
+  "pageId": null,
+  "spaceKey": "SDLC",
+  "pageTitle": "[CJS-2] Implement Simple Login Page - SDLC Summary",
+  "contentGenerated": true,
+  "contentLocation": "docs/artifacts/CJS-2/confluence-page-content.xml",
+  "manualPublicationInstructions": {
+    "step1": "Open Confluence: https://testingwithelitea.atlassian.net/wiki",
+    "step2": "Navigate to SDLC space",
+    "step3": "Create new page with title: [CJS-2] Implement Simple Login Page - SDLC Summary",
+    "step4": "Switch to Storage Format editor (or use Insert > Other macros)",
+    "step5": "Copy content from: docs/artifacts/CJS-2/confluence-page-content.xml",
+    "step6": "Paste into page editor",
+    "step7": "Add labels: sdlc, automated, cjs-2, complete",
+    "step8": "Publish page",
+    "step9": "Update confluence-status.json with published URL and page ID"
+  },
+  "alternativeApproach": "Use Confluence REST API directly with curl/PowerShell to publish the page",
+  "generatedAt": "2026-09-03T23:50:00+0530",
+  "generatedBy": "claude-code-agent-09",
+  "userStoryId": "CJS-2",
+  "artifactsSummary": {
+    "totalArtifacts": 9,
+    "phases": 9,
+    "requirementsMet": "15/15 (8 FR + 7 NFR)",
+    "testsPassed": "14/14",
+    "coverage": "100%",
+    "buildStatus": "SUCCESS",
+    "prStatus": "OPEN",
+    "prUrl": "https://github.com/swarnaanaparthiepam/claude-agentic-sdlc-capstone/pull/2"
+  }
+}

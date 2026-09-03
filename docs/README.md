@@ -16,7 +16,7 @@ docs/artifacts/<USER_STORY_ID>/
 ├── impl-plan.md            # Implementation plan (Phase 04)
 ├── review.md               # Code review (Phase 06)
 ├── verification.md         # Test results (Phase 07)
-└── confluence-status.json  # Confluence publication metadata
+└── confluence-status.json  # Confluence publication metadata (created by GitHub Actions)
 ```
 
 **Note:** Phase 05 (Implementation) creates application code in the repository root or designated app directory, not in docs/artifacts/.
@@ -44,6 +44,8 @@ docs/artifacts/<USER_STORY_ID>/
    ↓ APPROVAL
 08: PR             → Create PR → GitHub PR
    ↓ COMPLETE
+
+(Confluence publishing happens automatically via GitHub Actions after PR merge)
 ```
 
 ### Human Approval Gates
@@ -75,7 +77,7 @@ Persistent state tracker for the SDLC.
 - Last Updated
 - Notes (chronological log)
 - PR Information (URL when Phase 08 complete)
-- Confluence Status (URL when published)
+- Confluence Status (Published automatically by GitHub Actions after PR merge)
 
 ### Phase Artifacts
 
@@ -122,6 +124,8 @@ Each artifact references its inputs and traces decisions back to source.
 **State:** `status.md` is single source of truth
 
 **Phases:** 9 independent agents (00-08) invoked by workflow
+
+**Publishing:** Confluence publishing via GitHub Actions (automated after PR merge)
 
 **Approval:** Re-invoking workflow = implicit approval
 
