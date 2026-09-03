@@ -14,8 +14,8 @@ This is an Agentic SDLC Capstone project demonstrating a complete 8-phase Softwa
 - Stateless between invocations (state in `status.md`)
 - Never auto-advances through phases
 
-### Phase Agents (9 agents)
-- `00-input.md` through `08-pr.md`
+### Phase Agents (10 agents)
+- `00-input.md` through `09-confluence.md`
 - **Support TWO invocation modes:**
   1. **Workflow Mode:** Invoked BY workflow.md with orchestration
   2. **Standalone Mode:** Can be invoked directly by users
@@ -176,16 +176,19 @@ docs/artifacts/<USER_STORY_ID>/
 ## Phase Sequence
 
 ```
-00: Input          → user-story.md      → APPROVAL
-01: Requirements   → requirements.md    → APPROVAL
-02: Architecture   → architecture.md    → APPROVAL
-03: Design Review  → design-review.md   → APPROVAL
-04: Planning       → impl-plan.md       → APPROVAL
-05: Implementation → code + tests       → APPROVAL
-06: Review         → review.md          → APPROVAL
-07: Verification   → verification.md    → APPROVAL
-08: PR             → GitHub PR          → COMPLETE
+00: Input                 → user-story.md          → APPROVAL
+01: Requirements          → requirements.md        → APPROVAL
+02: Architecture          → architecture.md        → APPROVAL
+03: Design Review         → design-review.md       → APPROVAL
+04: Planning              → impl-plan.md           → APPROVAL
+05: Implementation        → code + tests           → APPROVAL
+06: Review                → review.md              → APPROVAL
+07: Verification          → verification.md        → APPROVAL
+08: PR                    → GitHub PR              → APPROVAL (wait for merge)
+09: Confluence Publishing → confluence-status.json → COMPLETE
 ```
+
+**Note:** Phase 09 is OPTIONAL. Projects without Confluence can stop at Phase 08.
 
 ## Recovery Scenarios
 
