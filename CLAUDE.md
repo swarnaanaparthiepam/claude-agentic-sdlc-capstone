@@ -14,8 +14,8 @@ This is an Agentic SDLC Capstone project demonstrating a complete 8-phase Softwa
 - Stateless between invocations (state in `status.md`)
 - Never auto-advances through phases
 
-### Phase Agents (10 agents)
-- `00-input.md` through `09-confluence.md`
+### Phase Agents (9 agents)
+- `00-input.md` through `08-pr.md`
 - **Support TWO invocation modes:**
   1. **Workflow Mode:** Invoked BY workflow.md with orchestration
   2. **Standalone Mode:** Can be invoked directly by users
@@ -176,19 +176,18 @@ docs/artifacts/<USER_STORY_ID>/
 ## Phase Sequence
 
 ```
-00: Input                 → user-story.md          → APPROVAL
-01: Requirements          → requirements.md        → APPROVAL
-02: Architecture          → architecture.md        → APPROVAL
-03: Design Review         → design-review.md       → APPROVAL
-04: Planning              → impl-plan.md           → APPROVAL
-05: Implementation        → code + tests           → APPROVAL
-06: Review                → review.md              → APPROVAL
-07: Verification          → verification.md        → APPROVAL
-08: PR                    → GitHub PR              → APPROVAL (wait for merge)
-09: Confluence Publishing → confluence-status.json → COMPLETE
+00: Input          → user-story.md   → APPROVAL
+01: Requirements   → requirements.md → APPROVAL
+02: Architecture   → architecture.md → APPROVAL
+03: Design Review  → design-review.md → APPROVAL
+04: Planning       → impl-plan.md    → APPROVAL
+05: Implementation → code + tests    → APPROVAL
+06: Review         → review.md       → APPROVAL
+07: Verification   → verification.md → APPROVAL
+08: PR             → GitHub PR       → COMPLETE (workflow ends)
 ```
 
-**Note:** Phase 09 is OPTIONAL. Projects without Confluence can stop at Phase 08.
+**Note:** Confluence publishing happens automatically via GitHub Actions after PR merge.
 
 ## Recovery Scenarios
 
@@ -267,7 +266,7 @@ Phase 05 agent will create the application structure, source code, and tests bas
 After Phase 08:
 - PR created on GitHub
 - status.md shows "Status: COMPLETE"
-- Workflow reports PR URL
-- Human merges PR (not automated)
-- GitHub Action publishes to Confluence
-- Dashboard shows Confluence publication status
+- Workflow reports PR URL and ends
+- Human reviews and merges PR (not automated)
+- GitHub Action automatically publishes to Confluence after PR merge
+- Confluence publication metadata written to `confluence-status.json`

@@ -1,12 +1,12 @@
 # Agentic SDLC Workflow
 
-**Purpose:** Coordinates the 9-phase SDLC pipeline with human approval gates between each phase.
+**Purpose:** Coordinates the 8-phase SDLC pipeline with human approval gates between each phase.
 
 **Entry Point:** `/workflow <USER_STORY_ID>`
 
 ## Overview
 
-This workflow sequences Phases 00-09, enforcing human approval after every phase. It maintains persistent state in `status.md` and is stateless between invocations.
+This workflow sequences Phases 00-08, enforcing human approval after every phase. It maintains persistent state in `status.md` and is stateless between invocations.
 
 ## Phases
 
@@ -19,7 +19,8 @@ This workflow sequences Phases 00-09, enforcing human approval after every phase
 7. **Phase 06: Review** - Code review → review.md
 8. **Phase 07: Verification** - Verify and test → verification.md
 9. **Phase 08: PR** - Create pull request → GitHub PR
-10. **Phase 09: Confluence Publishing** - Publish SDLC summary to Confluence (after PR merge)
+
+**Note:** Confluence publishing is handled automatically by GitHub Actions after PR merge (not part of the SDLC phases).
 
 ## Coordination Logic
 
@@ -98,8 +99,7 @@ phases = [
     {"id": "05", "name": "Implementation", "agent": "05-implementation", "artifact": "code+tests"},
     {"id": "06", "name": "Review", "agent": "06-review", "artifact": "review.md"},
     {"id": "07", "name": "Verification", "agent": "07-verification", "artifact": "verification.md"},
-    {"id": "08", "name": "PR", "agent": "08-pr", "artifact": "GitHub PR"},
-    {"id": "09", "name": "Confluence Publishing", "agent": "09-confluence", "artifact": "confluence-status.json"}
+    {"id": "08", "name": "PR", "agent": "08-pr", "artifact": "GitHub PR"}
 ]
 
 current_phase_id = status["Current Phase"].split(":")[0]  # e.g., "02"
@@ -248,7 +248,7 @@ def create_initial_status(user_story_id):
         "Current Phase": "00: Input",
         "Completed Phases": {
             "00": False, "01": False, "02": False, "03": False,
-            "04": False, "05": False, "06": False, "07": False, "08": False, "09": False
+            "04": False, "05": False, "06": False, "07": False, "08": False
         },
         "Pending Human Approval": "None",
         "Blocked Phase": "None",
@@ -256,7 +256,7 @@ def create_initial_status(user_story_id):
         "Last Updated": today(),
         "Notes": [f"Workflow initialized for {user_story_id} on {today()}"],
         "PR Information": "",
-        "Confluence Status": ""
+        "Confluence Status": "(Published automatically by GitHub Actions after PR merge)"
     }
 ```
 
@@ -296,7 +296,7 @@ Recovery: Re-run phase or manually create artifact.
 
 ## Completion Behavior
 
-When Phase 09 completes:
+When Phase 08 completes:
 ```python
 status["Status"] = "COMPLETE"
 status["Completed Phases"]["08"] = True
@@ -311,7 +311,7 @@ report(
     f"All artifacts: {artifact_dir}\n\n"
     f"Next steps:\n"
     f"1. Review and merge PR\n"
-    f"2. Publish to Confluence (GitHub Action)\n"
+    f"2. Confluence publishing happens automatically via GitHub Actions\n"
     f"3. Close Jira ticket\n"
 )
 ```
