@@ -9,7 +9,7 @@ on:
         type: string
 
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened]
     branches:
       - main
 
@@ -20,20 +20,15 @@ jobs:
 
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (
-        github.event_name == 'pull_request' &&
-        github.event.pull_request.merged == true
-      )
+      github.event_name == 'pull_request'
 
     steps:
 
       # --------------------------------------------------
-      # 1. Checkout main
+      # 1. Checkout repository
       # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       # --------------------------------------------------
       # 2. Setup Node.js
@@ -67,37 +62,39 @@ jobs:
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             USER_STORY_ID="$MANUAL_STORY_ID"
 
-          # Automatic execution after PR merge
-          elif [[ -n "$PR_TITLE" ]]; then
-            # Example:
-            # CJS-2: Implement Simple Login Page
-            # CJS-15: Add User Profile
-            USER_STORY_ID=$(
-              echo "$PR_TITLE" |
-              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
-              head -1 || true
-            )
+          # Pull request execution
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
 
-          # Fallback to branch name
-          elif [[ -n "$PR_BRANCH" ]]; then
-            # Example:
-            # feature/CJS-2
-            # feature/CJS-15-login
-            USER_STORY_ID=$(
-              echo "$PR_BRANCH" |
-              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
-              head -1 || true
-            )
+            # First try the PR title.
+            if [[ -n "$PR_TITLE" ]]; then
+              USER_STORY_ID=$(
+                echo "$PR_TITLE" |
+                grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+                head -1 || true
+              )
+            fi
+
+            # If not found, try the branch name.
+            if [[ -z "$USER_STORY_ID" && -n "$PR_BRANCH" ]]; then
+              USER_STORY_ID=$(
+                echo "$PR_BRANCH" |
+                grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+                head -1 || true
+              )
+            fi
           fi
 
           if [[ -z "$USER_STORY_ID" ]]; then
             echo "ERROR: Could not determine User Story ID."
             echo ""
-            echo "Automatic PR runs require the PR title to contain"
-            echo "a Jira-style User Story ID."
+            echo "For automatic PR runs, the PR title or branch"
+            echo "must contain a Jira-style User Story ID."
             echo ""
-            echo "Example:"
+            echo "Example PR title:"
             echo "CJS-2: Implement Simple Login Page"
+            echo ""
+            echo "Example branch:"
+            echo "feature/CJS-2-login"
             exit 1
           fi
 
@@ -127,7 +124,17 @@ jobs:
             echo "$ARTIFACT_DIR"
             echo ""
             echo "Available artifact directories:"
-            find docs/artifacts -maxdepth 1 -mindepth 1 -type d -print || true
+
+            if [[ -d "docs/artifacts" ]]; then
+              find docs/artifacts \
+                -maxdepth 1 \
+                -mindepth 1 \
+                -type d \
+                -print || true
+            else
+              echo "docs/artifacts directory does not exist."
+            fi
+
             exit 1
           fi
 
@@ -161,40 +168,10 @@ jobs:
           node tools/confluence/publisher.mjs
 
       # --------------------------------------------------
-      # 6. Commit publication status
-      # --------------------------------------------------
-      - name: Commit publication status
-        shell: bash
-        env:
-          USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
-        run: |
-          set -e
-
-          STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
-
-          if [[ ! -f "$STATUS_FILE" ]]; then
-            echo "WARNING: Confluence status file was not created."
-            exit 0
-          fi
-
-          echo "Publication status:"
-          cat "$STATUS_FILE"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add "$STATUS_FILE"
-
-          git commit \
-            -m "docs: add Confluence publication status for $USER_STORY_ID" \
-            || echo "No changes to commit"
-
-          git push || echo "Nothing to push"
-
-      # --------------------------------------------------
-      # 7. Workflow Summary
+      # 6. Workflow Summary
       # --------------------------------------------------
       - name: Summary
+        if: always()
         shell: bash
         env:
           USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
@@ -203,7 +180,7 @@ jobs:
 
           echo "## Confluence Publication Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**User Story ID:** $USER_STORY_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "**User Story ID:** ${USER_STORY_ID:-Unknown}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [[ -f "$STATUS_FILE" ]]; then
@@ -219,7 +196,7 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "**Timestamp:** $TIMESTAMP" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "**Status:** ❌ Publication failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Status:** ❌ Publication failed or status file unavailable" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
