@@ -11,7 +11,8 @@ import path from 'path';
 const CONFLUENCE_URL = process.env.CONFLUENCE_URL;
 const CONFLUENCE_EMAIL = process.env.CONFLUENCE_EMAIL;
 const CONFLUENCE_API_TOKEN = process.env.CONFLUENCE_API_TOKEN;
-const CONFLUENCE_SPACE_KEY = process.env.CONFLUENCE_SPACE_KEY || 'DEV';
+const CONFLUENCE_SPACE_KEY =
+  process.env.CONFLUENCE_SPACE_KEY || 'DEV';
 const USER_STORY_ID = process.env.USER_STORY_ID;
 
 // ============================================================
@@ -63,12 +64,13 @@ async function confluenceRequest(endpoint, options = {}) {
       Authorization: authHeader,
       'Content-Type': 'application/json',
       Accept: 'application/json',
-      ...options.headers
+      ...(options.headers || {})
     }
   });
 
   if (!response.ok) {
     const error = await response.text();
+
     throw new Error(
       `Confluence API error (${response.status}): ${error}`
     );
@@ -78,7 +80,7 @@ async function confluenceRequest(endpoint, options = {}) {
 }
 
 // ============================================================
-// XML/XHTML escaping
+// XML / XHTML escaping
 // ============================================================
 
 function escapeXml(value) {
@@ -91,92 +93,89 @@ function escapeXml(value) {
 }
 
 // ============================================================
+// Safe inline Markdown conversion
+// ============================================================
+
+function convertInlineMarkdown(text) {
+  let result = escapeXml(text);
+
+  // Inline code
+  result = result.replace(
+    /`([^`]+)`/g,
+    '<code>$1</code>'
+  );
+
+  // Bold
+  result = result.replace(
+    /\*\*(.+?)\*\*/g,
+    '<strong>$1</strong>'
+  );
+
+  // Italic
+  result = result.replace(
+    /(?<!\*)\*([^*]+)\*(?!\*)/g,
+    '<em>$1</em>'
+  );
+
+  // Markdown links
+  result = result.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2">$1</a>'
+  );
+
+  return result;
+}
+
+// ============================================================
 // Markdown → Confluence Storage Format
 // ============================================================
 
 function markdownToConfluence(markdown) {
-  const lines = markdown.replace(/\r\n/g, '\n').split('\n');
+  const lines = markdown
+    .replace(/\r\n/g, '\n')
+    .split('\n');
 
   const output = [];
-  let inCodeBlock = false;
-  let codeLanguage = '';
-  let codeLines = [];
-
-  function flushCodeBlock() {
-    if (!inCodeBlock) return;
-
-    const code = codeLines.join('\n');
-
-    const languageParameter = codeLanguage
-      ? `<ac:parameter ac:name="language">${escapeXml(
-          codeLanguage
-        )}</ac:parameter>`
-      : '';
-
-    output.push(
-      `<ac:structured-macro ac:name="code">` +
-        languageParameter +
-        `<ac:plain-text-body><![CDATA[${code.replace(
-          /\]\]>/g,
-          ']]]]><![CDATA[>'
-        )}]]></ac:plain-text-body>` +
-        `</ac:structured-macro>`
-    );
-
-    codeLines = [];
-    codeLanguage = '';
-    inCodeBlock = false;
-  }
-
-  function inlineMarkdown(text) {
-    let result = escapeXml(text);
-
-    // Markdown links
-    result = result.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2">$1</a>'
-    );
-
-    // Bold
-    result = result.replace(
-      /\*\*(.+?)\*\*/g,
-      '<strong>$1</strong>'
-    );
-
-    // Italic
-    result = result.replace(
-      /(?<!\*)\*([^*]+)\*(?!\*)/g,
-      '<em>$1</em>'
-    );
-
-    // Inline code
-    result = result.replace(
-      /`([^`]+)`/g,
-      '<code>$1</code>'
-    );
-
-    return result;
-  }
 
   let paragraphLines = [];
   let listItems = [];
   let listType = null;
 
+  let inCodeBlock = false;
+  let codeLanguage = '';
+  let codeLines = [];
+
+  // ----------------------------------------------------------
+  // Flush paragraph
+  // ----------------------------------------------------------
+
   function flushParagraph() {
-    if (paragraphLines.length === 0) return;
+    if (paragraphLines.length === 0) {
+      return;
+    }
 
     const text = paragraphLines
-      .map(line => inlineMarkdown(line))
+      .map(line => convertInlineMarkdown(line))
       .join('<br />');
 
     output.push(`<p>${text}</p>`);
+
     paragraphLines = [];
   }
 
-  function flushList() {
-    if (listItems.length === 0) return;
+  // ----------------------------------------------------------
+  // Flush list
+  // ----------------------------------------------------------
 
-    const tag = listType === 'ordered' ? 'ol' : 'ul';
+  function flushList() {
+    if (listItems.length === 0) {
+      return;
+    }
+
+    const tag =
+      listType === 'ordered'
+        ? 'ol'
+        : 'ul';
 
     output.push(
       `<${tag}>${listItems.join('')}</${tag}>`
@@ -186,9 +185,61 @@ function markdownToConfluence(markdown) {
     listType = null;
   }
 
+  // ----------------------------------------------------------
+  // Flush code block
+  // ----------------------------------------------------------
+
+  function flushCodeBlock() {
+    if (!inCodeBlock) {
+      return;
+    }
+
+    const code = codeLines.join('\n');
+
+    const languageParameter = codeLanguage
+      ? `<ac:parameter ac:name="language">${escapeXml(
+          codeLanguage
+        )}</ac:parameter>`
+      : '';
+
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT put raw code inside the Confluence XML.
+     *
+     * If the source code contains:
+     *
+     *   <xml>
+     *
+     * Confluence would interpret it as an XML element.
+     *
+     * escapeXml() converts it to:
+     *
+     *   &lt;xml&gt;
+     *
+     * which is safe.
+     */
+    output.push(
+      `<ac:structured-macro ac:name="code">` +
+        languageParameter +
+        `<ac:plain-text-body>${escapeXml(
+          code
+        )}</ac:plain-text-body>` +
+        `</ac:structured-macro>`
+    );
+
+    codeLines = [];
+    codeLanguage = '';
+    inCodeBlock = false;
+  }
+
+  // ==========================================================
+  // Process lines
+  // ==========================================================
+
   for (const line of lines) {
     // --------------------------------------------------------
-    // Code blocks
+    // Code block start / end
     // --------------------------------------------------------
 
     if (line.startsWith('```')) {
@@ -199,7 +250,9 @@ function markdownToConfluence(markdown) {
         flushList();
 
         inCodeBlock = true;
-        codeLanguage = line.slice(3).trim();
+        codeLanguage = line
+          .slice(3)
+          .trim();
       }
 
       continue;
@@ -221,19 +274,30 @@ function markdownToConfluence(markdown) {
     }
 
     // --------------------------------------------------------
-    // Headings
+    // Heading
     // --------------------------------------------------------
 
-    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    const headingMatch = line.match(
+      /^(#{1,6})\s+(.*)$/
+    );
 
     if (headingMatch) {
       flushParagraph();
       flushList();
 
-      const level = Math.min(headingMatch[1].length, 6);
-      const text = inlineMarkdown(headingMatch[2]);
+      const level = Math.min(
+        headingMatch[1].length,
+        6
+      );
 
-      output.push(`<h${level}>${text}</h${level}>`);
+      const text = convertInlineMarkdown(
+        headingMatch[2]
+      );
+
+      output.push(
+        `<h${level}>${text}</h${level}>`
+      );
+
       continue;
     }
 
@@ -241,19 +305,26 @@ function markdownToConfluence(markdown) {
     // Unordered list
     // --------------------------------------------------------
 
-    const unorderedMatch = line.match(/^[-*]\s+(.*)$/);
+    const unorderedMatch = line.match(
+      /^[-*]\s+(.*)$/
+    );
 
     if (unorderedMatch) {
       flushParagraph();
 
-      if (listType && listType !== 'unordered') {
+      if (
+        listType &&
+        listType !== 'unordered'
+      ) {
         flushList();
       }
 
       listType = 'unordered';
 
       listItems.push(
-        `<li>${inlineMarkdown(unorderedMatch[1])}</li>`
+        `<li>${convertInlineMarkdown(
+          unorderedMatch[1]
+        )}</li>`
       );
 
       continue;
@@ -263,20 +334,65 @@ function markdownToConfluence(markdown) {
     // Ordered list
     // --------------------------------------------------------
 
-    const orderedMatch = line.match(/^\d+\.\s+(.*)$/);
+    const orderedMatch = line.match(
+      /^\d+\.\s+(.*)$/
+    );
 
     if (orderedMatch) {
       flushParagraph();
 
-      if (listType && listType !== 'ordered') {
+      if (
+        listType &&
+        listType !== 'ordered'
+      ) {
         flushList();
       }
 
       listType = 'ordered';
 
       listItems.push(
-        `<li>${inlineMarkdown(orderedMatch[1])}</li>`
+        `<li>${convertInlineMarkdown(
+          orderedMatch[1]
+        )}</li>`
       );
+
+      continue;
+    }
+
+    // --------------------------------------------------------
+    // Blockquote
+    // --------------------------------------------------------
+
+    const quoteMatch = line.match(
+      /^>\s?(.*)$/
+    );
+
+    if (quoteMatch) {
+      flushParagraph();
+      flushList();
+
+      output.push(
+        `<blockquote>${convertInlineMarkdown(
+          quoteMatch[1]
+        )}</blockquote>`
+      );
+
+      continue;
+    }
+
+    // --------------------------------------------------------
+    // Horizontal rule
+    // --------------------------------------------------------
+
+    if (
+      /^(\*\s*){3,}$/.test(line) ||
+      /^(-\s*){3,}$/.test(line) ||
+      /^(_\s*){3,}$/.test(line)
+    ) {
+      flushParagraph();
+      flushList();
+
+      output.push('<hr />');
 
       continue;
     }
@@ -286,10 +402,18 @@ function markdownToConfluence(markdown) {
     // --------------------------------------------------------
 
     flushList();
+
     paragraphLines.push(line);
   }
 
-  flushCodeBlock();
+  // ==========================================================
+  // Flush remaining content
+  // ==========================================================
+
+  if (inCodeBlock) {
+    flushCodeBlock();
+  }
+
   flushParagraph();
   flushList();
 
@@ -297,42 +421,57 @@ function markdownToConfluence(markdown) {
 }
 
 // ============================================================
-// Parent Page
+// Find or create parent page
 // ============================================================
 
-async function ensureParentPage(spaceKey, parentTitle) {
+async function ensureParentPage(
+  spaceKey,
+  parentTitle
+) {
   try {
     const result = await confluenceRequest(
       `/content?spaceKey=${encodeURIComponent(
         spaceKey
-      )}&title=${encodeURIComponent(parentTitle)}&limit=1`
+      )}&title=${encodeURIComponent(
+        parentTitle
+      )}&limit=1`
     );
 
-    if (result.results && result.results.length > 0) {
+    if (
+      result.results &&
+      result.results.length > 0
+    ) {
       return result.results[0].id;
     }
 
-    console.log(`Parent page not found. Creating: ${parentTitle}`);
+    console.log(
+      `Parent page not found. Creating: ${parentTitle}`
+    );
 
-    const page = await confluenceRequest('/content', {
-      method: 'POST',
-      body: JSON.stringify({
-        type: 'page',
-        title: parentTitle,
-        space: {
-          key: spaceKey
-        },
-        body: {
-          storage: {
-            value:
-              '<p>This page contains documentation for Agentic SDLC workflows.</p>',
-            representation: 'storage'
+    const page = await confluenceRequest(
+      '/content',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          type: 'page',
+          title: parentTitle,
+          space: {
+            key: spaceKey
+          },
+          body: {
+            storage: {
+              value:
+                '<p>This page contains documentation for Agentic SDLC workflows.</p>',
+              representation: 'storage'
+            }
           }
-        }
-      })
-    });
+        })
+      }
+    );
 
-    console.log(`Created parent page: ${parentTitle}`);
+    console.log(
+      `Created parent page: ${parentTitle}`
+    );
 
     return page.id;
   } catch (error) {
@@ -346,7 +485,7 @@ async function ensureParentPage(spaceKey, parentTitle) {
 }
 
 // ============================================================
-// Read Artifacts
+// Read artifacts
 // ============================================================
 
 async function readArtifacts() {
@@ -363,10 +502,16 @@ async function readArtifacts() {
   ];
 
   for (const file of files) {
-    const filepath = path.join(artifactDir, file);
+    const filepath = path.join(
+      artifactDir,
+      file
+    );
 
     if (existsSync(filepath)) {
-      artifacts[file] = await readFile(filepath, 'utf8');
+      artifacts[file] = await readFile(
+        filepath,
+        'utf8'
+      );
     }
   }
 
@@ -374,12 +519,17 @@ async function readArtifacts() {
 }
 
 // ============================================================
-// Build Page Content
+// Build Confluence page content
 // ============================================================
 
-function buildPageContent(artifacts, userStoryId) {
+function buildPageContent(
+  artifacts,
+  userStoryId
+) {
   let content =
-    `<h1>SDLC Documentation: ${escapeXml(userStoryId)}</h1>`;
+    `<h1>SDLC Documentation: ${escapeXml(
+      userStoryId
+    )}</h1>`;
 
   const sections = [
     {
@@ -412,18 +562,24 @@ function buildPageContent(artifacts, userStoryId) {
     }
   ];
 
-  for (const { key, title } of sections) {
+  for (const {
+    key,
+    title
+  } of sections) {
     if (!artifacts[key]) {
       continue;
     }
 
-    content += `<h2>${escapeXml(title)}</h2>`;
+    content +=
+      `<h2>${escapeXml(title)}</h2>`;
 
     content +=
       `<ac:structured-macro ac:name="expand">` +
       `<ac:rich-text-body>`;
 
-    content += markdownToConfluence(artifacts[key]);
+    content += markdownToConfluence(
+      artifacts[key]
+    );
 
     content +=
       `</ac:rich-text-body>` +
@@ -439,17 +595,29 @@ function buildPageContent(artifacts, userStoryId) {
 }
 
 // ============================================================
-// Main Publish Function
+// Main publish function
 // ============================================================
 
 async function publish() {
-  console.log('===========================================');
+  console.log(
+    '==========================================='
+  );
   console.log('Confluence Publisher');
-  console.log('===========================================');
-  console.log(`User Story: ${USER_STORY_ID}`);
-  console.log(`Artifact Directory: ${artifactDir}`);
-  console.log(`Confluence Space: ${CONFLUENCE_SPACE_KEY}`);
-  console.log('===========================================\n');
+  console.log(
+    '==========================================='
+  );
+  console.log(
+    `User Story: ${USER_STORY_ID}`
+  );
+  console.log(
+    `Artifact Directory: ${artifactDir}`
+  );
+  console.log(
+    `Confluence Space: ${CONFLUENCE_SPACE_KEY}`
+  );
+  console.log(
+    '===========================================\n'
+  );
 
   try {
     // --------------------------------------------------------
@@ -459,57 +627,72 @@ async function publish() {
     console.log('Reading artifacts...');
 
     const artifacts = await readArtifacts();
-    const artifactCount = Object.keys(artifacts).length;
 
-    console.log(`Found ${artifactCount} artifacts\n`);
+    const artifactCount =
+      Object.keys(artifacts).length;
+
+    console.log(
+      `Found ${artifactCount} artifacts\n`
+    );
 
     if (artifactCount === 0) {
       console.error(
         'ERROR: No artifacts found to publish.'
       );
+
       process.exit(1);
     }
 
     // --------------------------------------------------------
-    // Ensure parent page
+    // Parent page
     // --------------------------------------------------------
 
-    console.log('Ensuring parent page exists...');
-
-    const parentTitle = 'Agentic SDLC Capstone';
-
-    const parentId = await ensureParentPage(
-      CONFLUENCE_SPACE_KEY,
-      parentTitle
+    console.log(
+      'Ensuring parent page exists...'
     );
 
-    console.log(`Parent page ID: ${parentId}\n`);
+    const parentTitle =
+      'Agentic SDLC Capstone';
+
+    const parentId =
+      await ensureParentPage(
+        CONFLUENCE_SPACE_KEY,
+        parentTitle
+      );
+
+    console.log(
+      `Parent page ID: ${parentId}\n`
+    );
 
     // --------------------------------------------------------
-    // Check existing CJS page
+    // Check existing page
     // --------------------------------------------------------
 
-    console.log('Checking for existing page...');
+    console.log(
+      'Checking for existing page...'
+    );
 
     const pageTitle =
       `${USER_STORY_ID}: SDLC Documentation`;
 
-    const existingResult = await confluenceRequest(
-      `/content?spaceKey=${encodeURIComponent(
-        CONFLUENCE_SPACE_KEY
-      )}&title=${encodeURIComponent(
-        pageTitle
-      )}&limit=1`
-    );
+    const existingResult =
+      await confluenceRequest(
+        `/content?spaceKey=${encodeURIComponent(
+          CONFLUENCE_SPACE_KEY
+        )}&title=${encodeURIComponent(
+          pageTitle
+        )}&limit=1`
+      );
 
     // --------------------------------------------------------
     // Build content
     // --------------------------------------------------------
 
-    const content = buildPageContent(
-      artifacts,
-      USER_STORY_ID
-    );
+    const content =
+      buildPageContent(
+        artifacts,
+        USER_STORY_ID
+      );
 
     let pageId;
     let pageUrl;
@@ -522,7 +705,8 @@ async function publish() {
       existingResult.results &&
       existingResult.results.length > 0
     ) {
-      const existing = existingResult.results[0];
+      const existing =
+        existingResult.results[0];
 
       pageId = existing.id;
 
@@ -530,28 +714,32 @@ async function publish() {
         `Updating existing page (ID: ${pageId})...\n`
       );
 
-      const updated = await confluenceRequest(
-        `/content/${pageId}`,
-        {
-          method: 'PUT',
-          body: JSON.stringify({
-            version: {
-              number: existing.version.number + 1
-            },
-            title: pageTitle,
-            type: 'page',
-            body: {
-              storage: {
-                value: content,
-                representation: 'storage'
+      const updated =
+        await confluenceRequest(
+          `/content/${pageId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({
+              version: {
+                number:
+                  existing.version.number + 1
+              },
+              title: pageTitle,
+              type: 'page',
+              body: {
+                storage: {
+                  value: content,
+                  representation: 'storage'
+                }
               }
-            }
-          })
-        }
-      );
+            })
+          }
+        );
 
       pageUrl =
-        `${CONFLUENCE_URL}/wiki${updated._links.webui}`;
+        `${CONFLUENCE_URL}/wiki${
+          updated._links.webui
+        }`;
     }
 
     // --------------------------------------------------------
@@ -559,59 +747,70 @@ async function publish() {
     // --------------------------------------------------------
 
     else {
-      console.log('Creating new page...\n');
-
-      const created = await confluenceRequest(
-        '/content',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            type: 'page',
-            title: pageTitle,
-            space: {
-              key: CONFLUENCE_SPACE_KEY
-            },
-            ancestors: [
-              {
-                id: parentId
-              }
-            ],
-            body: {
-              storage: {
-                value: content,
-                representation: 'storage'
-              }
-            }
-          })
-        }
+      console.log(
+        'Creating new page...\n'
       );
+
+      const created =
+        await confluenceRequest(
+          '/content',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              type: 'page',
+              title: pageTitle,
+              space: {
+                key: CONFLUENCE_SPACE_KEY
+              },
+              ancestors: [
+                {
+                  id: parentId
+                }
+              ],
+              body: {
+                storage: {
+                  value: content,
+                  representation: 'storage'
+                }
+              }
+            })
+          }
+        );
 
       pageId = created.id;
 
       pageUrl =
-        `${CONFLUENCE_URL}/wiki${created._links.webui}`;
+        `${CONFLUENCE_URL}/wiki${
+          created._links.webui
+        }`;
     }
 
     // --------------------------------------------------------
     // Write publication status
     // --------------------------------------------------------
 
-    const statusPath = path.join(
-      artifactDir,
-      'confluence-status.json'
-    );
+    const statusPath =
+      path.join(
+        artifactDir,
+        'confluence-status.json'
+      );
 
     const status = {
       published: true,
       url: pageUrl,
       pageId,
-      timestamp: new Date().toISOString(),
+      timestamp:
+        new Date().toISOString(),
       userStoryId: USER_STORY_ID
     };
 
     await writeFile(
       statusPath,
-      JSON.stringify(status, null, 2)
+      JSON.stringify(
+        status,
+        null,
+        2
+      )
     );
 
     // --------------------------------------------------------
@@ -625,13 +824,21 @@ async function publish() {
     console.log(
       '==========================================='
     );
-    console.log(`Page URL: ${pageUrl}`);
-    console.log(`Status file: ${statusPath}`);
+    console.log(
+      `Page URL: ${pageUrl}`
+    );
+    console.log(
+      `Status file: ${statusPath}`
+    );
     console.log(
       '===========================================\n'
     );
   } catch (error) {
-    console.error('ERROR:', error.message);
+    console.error(
+      'ERROR:',
+      error.message
+    );
+
     process.exit(1);
   }
 }
