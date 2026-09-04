@@ -211,7 +211,7 @@ async function publish() {
       const updated = await confluenceRequest(`/content/${pageId}`, {
         method: 'PUT',
         body: JSON.stringify({
-          version: { number: existing.version.number + 1 },
+          version: { number: (existing.version?.number || 1) + 1 },
           title: pageTitle,
           type: 'page',
           body: {
