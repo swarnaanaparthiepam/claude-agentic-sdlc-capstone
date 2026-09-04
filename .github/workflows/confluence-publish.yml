@@ -74,7 +74,7 @@ jobs:
               )
             fi
 
-            # If not found, try the PR branch.
+            # If not found, try the branch name.
             if [[ -z "$USER_STORY_ID" && -n "$PR_BRANCH" ]]; then
               USER_STORY_ID=$(
                 echo "$PR_BRANCH" |
@@ -168,53 +168,7 @@ jobs:
           node tools/confluence/publisher.mjs
 
       # --------------------------------------------------
-      # 6. Commit publication status
-      # --------------------------------------------------
-      - name: Commit publication status
-        if: success()
-        shell: bash
-        env:
-          USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
-          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          set -e
-
-          STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
-
-          if [[ ! -f "$STATUS_FILE" ]]; then
-            echo "WARNING: Confluence status file was not created."
-            exit 0
-          fi
-
-          echo "Publication status:"
-          cat "$STATUS_FILE"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add "$STATUS_FILE"
-
-          if git diff --cached --quiet; then
-            echo "No publication status changes to commit."
-            exit 0
-          fi
-
-          git commit \
-            -m "docs: add Confluence publication status for $USER_STORY_ID"
-
-          # Pull request workflows run in detached HEAD mode.
-          # Push the generated commit explicitly to the PR source branch.
-          if [[ "$EVENT_NAME" == "pull_request" && -n "$PR_BRANCH" ]]; then
-            echo "Pushing publication status to PR branch: $PR_BRANCH"
-            git push origin "HEAD:$PR_BRANCH"
-          else
-            echo "Pushing publication status..."
-            git push
-          fi
-
-      # --------------------------------------------------
-      # 7. Workflow Summary
+      # 6. Workflow Summary
       # --------------------------------------------------
       - name: Summary
         if: always()
