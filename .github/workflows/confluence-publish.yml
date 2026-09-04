@@ -17,10 +17,13 @@ jobs:
     name: Publish SDLC Artifacts to Confluence
     runs-on: ubuntu-latest
 
+    # Run manually, or automatically when a PR is actually merged into main.
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.merged == true)
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true
+      )
 
     steps:
 
@@ -45,41 +48,103 @@ jobs:
         id: extract_id
         shell: bash
         run: |
+          set -e
+
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+
             USER_STORY_ID="${{ github.event.inputs.user_story_id }}"
-          else
-            # Extract from PR title.
-            # Expected format:
-            # CJS-2: Implement Simple Login Page
+
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+
             PR_TITLE="${{ github.event.pull_request.title }}"
-            USER_STORY_ID=$(echo "$PR_TITLE" | grep -oE "CJS-[0-9]+" | head -1 || echo "")
+            PR_BRANCH="${{ github.event.pull_request.head.ref }}"
+
+            echo "PR Title: $PR_TITLE"
+            echo "PR Branch: $PR_BRANCH"
+
+            # --------------------------------------------
+            # First try to extract Jira ID from PR title.
+            #
+            # Examples:
+            #   CJS-2: Implement Login
+            #   CJS-15: Add Dashboard
+            #   ABC-123: Update API
+            # --------------------------------------------
+            USER_STORY_ID=$(
+              echo "$PR_TITLE" |
+              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+              head -1 ||
+              true
+            )
+
+            # --------------------------------------------
+            # If PR title does not contain an ID,
+            # try the source branch.
+            #
+            # Examples:
+            #   feature/CJS-2-login
+            #   feature/CJS-15-dashboard
+            #   bugfix/ABC-123-fix
+            # --------------------------------------------
+            if [[ -z "$USER_STORY_ID" ]]; then
+
+              USER_STORY_ID=$(
+                echo "$PR_BRANCH" |
+                grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+                head -1 ||
+                true
+              )
+
+            fi
+
           fi
 
+          # --------------------------------------------
+          # Make sure we found an ID.
+          # --------------------------------------------
           if [[ -z "$USER_STORY_ID" ]]; then
-            echo "ERROR: Could not determine User Story ID"
+
+            echo "ERROR: Could not determine User Story ID."
+            echo ""
+            echo "The User Story ID must appear in either:"
+            echo "  1. The PR title"
+            echo "  2. The PR source branch"
+            echo ""
+            echo "Examples:"
+            echo "  CJS-2: Implement Simple Login Page"
+            echo "  feature/CJS-15-user-registration"
+            echo "  bugfix/ABC-123-login-error"
+
             exit 1
           fi
 
+          echo "==========================================="
+          echo "Detected User Story ID: $USER_STORY_ID"
+          echo "==========================================="
+
           echo "user_story_id=$USER_STORY_ID" >> "$GITHUB_OUTPUT"
 
-          echo "==========================================="
-          echo "User Story ID: $USER_STORY_ID"
-          echo "==========================================="
-
       # --------------------------------------------------
-      # 4. Validate artifacts
+      # 4. Validate artifacts exist
       # --------------------------------------------------
       - name: Validate artifacts exist
         shell: bash
         run: |
+          set -e
+
           USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
           ARTIFACT_DIR="docs/artifacts/$USER_STORY_ID"
 
-          echo "Checking artifact directory:"
-          echo "$ARTIFACT_DIR"
+          echo "==========================================="
+          echo "Validating artifacts"
+          echo "==========================================="
+          echo "User Story: $USER_STORY_ID"
+          echo "Artifact Directory: $ARTIFACT_DIR"
+          echo "==========================================="
 
           if [[ ! -d "$ARTIFACT_DIR" ]]; then
-            echo "ERROR: Artifact directory not found: $ARTIFACT_DIR"
+            echo "ERROR: Artifact directory not found:"
+            echo "$ARTIFACT_DIR"
             exit 1
           fi
 
@@ -94,6 +159,8 @@ jobs:
       - name: Publish to Confluence
         shell: bash
         run: |
+          set -e
+
           echo "==========================================="
           echo "Publishing to Confluence"
           echo "==========================================="
@@ -109,7 +176,7 @@ jobs:
           CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
           CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
 
-          # Confluence space key
+          # Confluence space key is not a secret.
           CONFLUENCE_SPACE_KEY: claudecaps
 
       # --------------------------------------------------
@@ -118,11 +185,17 @@ jobs:
       - name: Commit confluence-status.json
         shell: bash
         run: |
+          set -e
+
           USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
           STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
 
           if [[ -f "$STATUS_FILE" ]]; then
-            echo "Publication status file found:"
+
+            echo "==========================================="
+            echo "Confluence publication status"
+            echo "==========================================="
+
             cat "$STATUS_FILE"
 
             git config user.name "github-actions[bot]"
@@ -135,8 +208,11 @@ jobs:
               || echo "No changes to commit"
 
             git push || echo "Nothing to push"
+
           else
+
             echo "WARNING: Confluence status file was not created."
+
           fi
 
       # --------------------------------------------------
@@ -154,19 +230,33 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [[ -f "$STATUS_FILE" ]]; then
+
             URL=$(jq -r '.url // empty' "$STATUS_FILE")
             TIMESTAMP=$(jq -r '.timestamp // empty' "$STATUS_FILE")
             PAGE_ID=$(jq -r '.pageId // empty' "$STATUS_FILE")
 
             echo "**Status:** ✅ Published" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "**Page ID:** $PAGE_ID" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "**URL:** $URL" >> "$GITHUB_STEP_SUMMARY"
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "**Timestamp:** $TIMESTAMP" >> "$GITHUB_STEP_SUMMARY"
+
+            if [[ -n "$PAGE_ID" ]]; then
+              echo "**Page ID:** $PAGE_ID" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            if [[ -n "$URL" ]]; then
+              echo "**URL:** $URL" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            if [[ -n "$TIMESTAMP" ]]; then
+              echo "**Timestamp:** $TIMESTAMP" >> "$GITHUB_STEP_SUMMARY"
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
           else
+
             echo "**Status:** ❌ Publication failed" >> "$GITHUB_STEP_SUMMARY"
+
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
