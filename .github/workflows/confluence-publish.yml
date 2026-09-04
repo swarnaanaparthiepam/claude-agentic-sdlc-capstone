@@ -4,13 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       user_story_id:
-        description: 'User Story ID (e.g., CJS-2)'
+        description: "User Story ID for manual publishing (e.g. CJS-2)"
         required: true
         type: string
 
   pull_request:
     types: [closed]
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   publish:
@@ -19,16 +20,20 @@ jobs:
 
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' &&
-       github.event.pull_request.merged == true)
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.merged == true
+      )
 
     steps:
 
       # --------------------------------------------------
-      # 1. Checkout repository
+      # 1. Checkout main
       # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       # --------------------------------------------------
       # 2. Setup Node.js
@@ -36,54 +41,98 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       # --------------------------------------------------
-      # 3. Extract User Story ID
+      # 3. Determine User Story ID
       # --------------------------------------------------
-      - name: Extract User Story ID
-        id: extract_id
+      - name: Determine User Story ID
+        id: story
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_STORY_ID: ${{ github.event.inputs.user_story_id }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            USER_STORY_ID="${{ github.event.inputs.user_story_id }}"
-          else
-            # Extract from PR title.
-            # Expected format:
+          set -e
+
+          echo "Event: $EVENT_NAME"
+          echo "PR title: $PR_TITLE"
+          echo "PR branch: $PR_BRANCH"
+
+          USER_STORY_ID=""
+
+          # Manual workflow execution
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            USER_STORY_ID="$MANUAL_STORY_ID"
+
+          # Automatic execution after PR merge
+          elif [[ -n "$PR_TITLE" ]]; then
+            # Example:
             # CJS-2: Implement Simple Login Page
-            PR_TITLE="${{ github.event.pull_request.title }}"
-            USER_STORY_ID=$(echo "$PR_TITLE" | grep -oE "CJS-[0-9]+" | head -1 || echo "")
+            # CJS-15: Add User Profile
+            USER_STORY_ID=$(
+              echo "$PR_TITLE" |
+              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+              head -1 || true
+            )
+
+          # Fallback to branch name
+          elif [[ -n "$PR_BRANCH" ]]; then
+            # Example:
+            # feature/CJS-2
+            # feature/CJS-15-login
+            USER_STORY_ID=$(
+              echo "$PR_BRANCH" |
+              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+              head -1 || true
+            )
           fi
 
           if [[ -z "$USER_STORY_ID" ]]; then
-            echo "ERROR: Could not determine User Story ID"
+            echo "ERROR: Could not determine User Story ID."
+            echo ""
+            echo "Automatic PR runs require the PR title to contain"
+            echo "a Jira-style User Story ID."
+            echo ""
+            echo "Example:"
+            echo "CJS-2: Implement Simple Login Page"
             exit 1
           fi
-
-          echo "user_story_id=$USER_STORY_ID" >> "$GITHUB_OUTPUT"
 
           echo "==========================================="
           echo "User Story ID: $USER_STORY_ID"
           echo "==========================================="
+
+          echo "user_story_id=$USER_STORY_ID" >> "$GITHUB_OUTPUT"
 
       # --------------------------------------------------
       # 4. Validate artifacts
       # --------------------------------------------------
       - name: Validate artifacts exist
         shell: bash
+        env:
+          USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
         run: |
-          USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
+          set -e
+
           ARTIFACT_DIR="docs/artifacts/$USER_STORY_ID"
 
           echo "Checking artifact directory:"
           echo "$ARTIFACT_DIR"
 
           if [[ ! -d "$ARTIFACT_DIR" ]]; then
-            echo "ERROR: Artifact directory not found: $ARTIFACT_DIR"
+            echo "ERROR: Artifact directory not found:"
+            echo "$ARTIFACT_DIR"
+            echo ""
+            echo "Available artifact directories:"
+            find docs/artifacts -maxdepth 1 -mindepth 1 -type d -print || true
             exit 1
           fi
 
           echo "Artifact directory found."
+
           echo ""
           echo "Artifacts:"
           ls -la "$ARTIFACT_DIR"
@@ -93,7 +142,15 @@ jobs:
       # --------------------------------------------------
       - name: Publish to Confluence
         shell: bash
+        env:
+          USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
+          CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
+          CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
+          CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
+          CONFLUENCE_SPACE_KEY: claudecaps
         run: |
+          set -e
+
           echo "==========================================="
           echo "Publishing to Confluence"
           echo "==========================================="
@@ -102,55 +159,51 @@ jobs:
           echo "==========================================="
 
           node tools/confluence/publisher.mjs
-        env:
-          USER_STORY_ID: ${{ steps.extract_id.outputs.user_story_id }}
-
-          CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
-          CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
-          CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
-
-          # Confluence space key
-          CONFLUENCE_SPACE_KEY: claudecaps
 
       # --------------------------------------------------
       # 6. Commit publication status
       # --------------------------------------------------
-      - name: Commit confluence-status.json
+      - name: Commit publication status
         shell: bash
+        env:
+          USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
         run: |
-          USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
+          set -e
+
           STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
 
-          if [[ -f "$STATUS_FILE" ]]; then
-            echo "Publication status file found:"
-            cat "$STATUS_FILE"
-
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-            git add "$STATUS_FILE"
-
-            git commit \
-              -m "docs: add Confluence publication status for $USER_STORY_ID" \
-              || echo "No changes to commit"
-
-            git push || echo "Nothing to push"
-          else
+          if [[ ! -f "$STATUS_FILE" ]]; then
             echo "WARNING: Confluence status file was not created."
+            exit 0
           fi
+
+          echo "Publication status:"
+          cat "$STATUS_FILE"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add "$STATUS_FILE"
+
+          git commit \
+            -m "docs: add Confluence publication status for $USER_STORY_ID" \
+            || echo "No changes to commit"
+
+          git push || echo "Nothing to push"
 
       # --------------------------------------------------
       # 7. Workflow Summary
       # --------------------------------------------------
       - name: Summary
         shell: bash
+        env:
+          USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
         run: |
-          USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
           STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
 
           echo "## Confluence Publication Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**User Story:** $USER_STORY_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "**User Story ID:** $USER_STORY_ID" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [[ -f "$STATUS_FILE" ]]; then
