@@ -22,16 +22,13 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'pull_request'
 
-
     steps:
 
       # --------------------------------------------------
-      # 1. Checkout main
+      # 1. Checkout repository
       # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       # --------------------------------------------------
       # 2. Setup Node.js
@@ -65,37 +62,38 @@ jobs:
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             USER_STORY_ID="$MANUAL_STORY_ID"
 
-          # Automatic execution after PR merge
+          # Automatic pull request execution
           elif [[ -n "$PR_TITLE" ]]; then
             # Example:
             # CJS-2: Implement Simple Login Page
-            # CJS-15: Add User Profile
+            # ABC-15: Implement User Profile
             USER_STORY_ID=$(
               echo "$PR_TITLE" |
               grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
               head -1 || true
             )
 
-          # Fallback to branch name
-          elif [[ -n "$PR_BRANCH" ]]; then
-            # Example:
-            # feature/CJS-2
-            # feature/CJS-15-login
-            USER_STORY_ID=$(
-              echo "$PR_BRANCH" |
-              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
-              head -1 || true
-            )
+            # If the PR title does not contain the ID,
+            # try the branch name.
+            if [[ -z "$USER_STORY_ID" && -n "$PR_BRANCH" ]]; then
+              USER_STORY_ID=$(
+                echo "$PR_BRANCH" |
+                grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+                head -1 || true
+              )
+            fi
           fi
 
           if [[ -z "$USER_STORY_ID" ]]; then
             echo "ERROR: Could not determine User Story ID."
             echo ""
-            echo "Automatic PR runs require the PR title to contain"
-            echo "a Jira-style User Story ID."
+            echo "The PR title or branch must contain a Jira-style User Story ID."
             echo ""
-            echo "Example:"
+            echo "Example PR title:"
             echo "CJS-2: Implement Simple Login Page"
+            echo ""
+            echo "Example branch:"
+            echo "feature/CJS-2"
             exit 1
           fi
 
@@ -125,7 +123,11 @@ jobs:
             echo "$ARTIFACT_DIR"
             echo ""
             echo "Available artifact directories:"
-            find docs/artifacts -maxdepth 1 -mindepth 1 -type d -print || true
+            find docs/artifacts \
+              -maxdepth 1 \
+              -mindepth 1 \
+              -type d \
+              -print || true
             exit 1
           fi
 
@@ -162,6 +164,7 @@ jobs:
       # 6. Commit publication status
       # --------------------------------------------------
       - name: Commit publication status
+        if: success()
         shell: bash
         env:
           USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
@@ -183,16 +186,21 @@ jobs:
 
           git add "$STATUS_FILE"
 
-          git commit \
-            -m "docs: add Confluence publication status for $USER_STORY_ID" \
-            || echo "No changes to commit"
+          if git diff --cached --quiet; then
+            echo "No publication status changes to commit."
+            exit 0
+          fi
 
-          git push || echo "Nothing to push"
+          git commit \
+            -m "docs: add Confluence publication status for $USER_STORY_ID"
+
+          git push
 
       # --------------------------------------------------
       # 7. Workflow Summary
       # --------------------------------------------------
       - name: Summary
+        if: always()
         shell: bash
         env:
           USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
@@ -201,7 +209,7 @@ jobs:
 
           echo "## Confluence Publication Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**User Story ID:** $USER_STORY_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "**User Story ID:** ${USER_STORY_ID:-Unknown}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [[ -f "$STATUS_FILE" ]]; then
@@ -217,7 +225,7 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "**Timestamp:** $TIMESTAMP" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "**Status:** ❌ Publication failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Status:** ❌ Publication failed or status file unavailable" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
