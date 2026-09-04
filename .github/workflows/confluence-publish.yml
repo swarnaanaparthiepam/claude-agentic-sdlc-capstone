@@ -65,11 +65,7 @@ jobs:
           # Pull request execution
           elif [[ "$EVENT_NAME" == "pull_request" ]]; then
 
-            # First try to determine the ID from the PR title.
-            # Examples:
-            # CJS-2: Implement Simple Login Page
-            # CJS-15: Add User Profile
-            # ABC-123: Implement User Profile
+            # First try the PR title.
             if [[ -n "$PR_TITLE" ]]; then
               USER_STORY_ID=$(
                 echo "$PR_TITLE" |
@@ -78,11 +74,7 @@ jobs:
               )
             fi
 
-            # If the title does not contain the ID,
-            # try the branch name.
-            # Examples:
-            # feature/CJS-2
-            # feature/CJS-15-login
+            # If not found, try the PR branch.
             if [[ -z "$USER_STORY_ID" && -n "$PR_BRANCH" ]]; then
               USER_STORY_ID=$(
                 echo "$PR_BRANCH" |
@@ -183,6 +175,8 @@ jobs:
         shell: bash
         env:
           USER_STORY_ID: ${{ steps.story.outputs.user_story_id }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -e
 
@@ -209,7 +203,15 @@ jobs:
           git commit \
             -m "docs: add Confluence publication status for $USER_STORY_ID"
 
-          git push
+          # Pull request workflows run in detached HEAD mode.
+          # Push the generated commit explicitly to the PR source branch.
+          if [[ "$EVENT_NAME" == "pull_request" && -n "$PR_BRANCH" ]]; then
+            echo "Pushing publication status to PR branch: $PR_BRANCH"
+            git push origin "HEAD:$PR_BRANCH"
+          else
+            echo "Pushing publication status..."
+            git push
+          fi
 
       # --------------------------------------------------
       # 7. Workflow Summary
