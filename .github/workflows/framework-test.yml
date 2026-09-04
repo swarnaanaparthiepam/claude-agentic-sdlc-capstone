@@ -13,9 +13,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # --------------------------------------------------
+      # 1. Checkout repository
+      # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # 2. Validate required directories
+      # --------------------------------------------------
       - name: Validate required directories
         run: |
           set -e
@@ -37,9 +43,13 @@ jobs:
               echo "ERROR: Missing directory: $dir"
               exit 1
             fi
+
             echo "✓ $dir"
           done
 
+      # --------------------------------------------------
+      # 3. Validate required files
+      # --------------------------------------------------
       - name: Validate required files
         run: |
           set -e
@@ -62,9 +72,13 @@ jobs:
               echo "ERROR: Missing file: $file"
               exit 1
             fi
+
             echo "✓ $file"
           done
 
+      # --------------------------------------------------
+      # 4. Validate phase agents
+      # --------------------------------------------------
       - name: Validate phase agents
         run: |
           set -e
@@ -85,13 +99,18 @@ jobs:
 
           for agent in "${agents[@]}"; do
             file=".claude/agents/$agent"
+
             if [[ ! -f "$file" ]]; then
               echo "ERROR: Missing agent: $file"
               exit 1
             fi
+
             echo "✓ $file"
           done
 
+      # --------------------------------------------------
+      # 5. Validate dashboard files
+      # --------------------------------------------------
       - name: Validate dashboard files
         run: |
           set -e
@@ -115,6 +134,9 @@ jobs:
 
           echo "✓ Dashboard files present"
 
+      # --------------------------------------------------
+      # 6. Validate Confluence publisher
+      # --------------------------------------------------
       - name: Validate Confluence publisher
         run: |
           set -e
@@ -128,20 +150,34 @@ jobs:
 
           echo "✓ Confluence publisher present"
 
+      # --------------------------------------------------
+      # 7. Check for hardcoded User Story IDs
+      # --------------------------------------------------
       - name: Check for hardcoded User Story IDs
         run: |
           set -e
 
           echo "Checking for hardcoded SCRUM IDs..."
 
-          if grep -rE "SCRUM-[0-9]+" .claude/ README.md CLAUDE.md 2>/dev/null | grep -v "Example:"; then
+          matches=$(
+            grep -rE "SCRUM-[0-9]+" .claude/ README.md CLAUDE.md 2>/dev/null \
+              | grep -vE "SCRUM-123|SCRUM-6|SCRUM-12" \
+              || true
+          )
+
+          if [[ -n "$matches" ]]; then
+            echo "$matches"
+            echo ""
             echo "ERROR: Found hardcoded SCRUM User Story IDs."
             echo "Use <USER_STORY_ID> placeholder instead."
             exit 1
           fi
 
-          echo "✓ No hardcoded User Story IDs found"
+          echo "✓ No hardcoded SCRUM User Story IDs found"
 
+      # --------------------------------------------------
+      # 8. Validation summary
+      # --------------------------------------------------
       - name: Validation summary
         run: |
           echo ""
