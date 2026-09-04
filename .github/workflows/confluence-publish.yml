@@ -62,19 +62,27 @@ jobs:
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             USER_STORY_ID="$MANUAL_STORY_ID"
 
-          # Automatic pull request execution
-          elif [[ -n "$PR_TITLE" ]]; then
-            # Example:
-            # CJS-2: Implement Simple Login Page
-            # ABC-15: Implement User Profile
-            USER_STORY_ID=$(
-              echo "$PR_TITLE" |
-              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
-              head -1 || true
-            )
+          # Pull request execution
+          elif [[ "$EVENT_NAME" == "pull_request" ]]; then
 
-            # If the PR title does not contain the ID,
+            # First try to determine the ID from the PR title.
+            # Examples:
+            # CJS-2: Implement Simple Login Page
+            # CJS-15: Add User Profile
+            # ABC-123: Implement User Profile
+            if [[ -n "$PR_TITLE" ]]; then
+              USER_STORY_ID=$(
+                echo "$PR_TITLE" |
+                grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+                head -1 || true
+              )
+            fi
+
+            # If the title does not contain the ID,
             # try the branch name.
+            # Examples:
+            # feature/CJS-2
+            # feature/CJS-15-login
             if [[ -z "$USER_STORY_ID" && -n "$PR_BRANCH" ]]; then
               USER_STORY_ID=$(
                 echo "$PR_BRANCH" |
@@ -87,13 +95,14 @@ jobs:
           if [[ -z "$USER_STORY_ID" ]]; then
             echo "ERROR: Could not determine User Story ID."
             echo ""
-            echo "The PR title or branch must contain a Jira-style User Story ID."
+            echo "For automatic PR runs, the PR title or branch"
+            echo "must contain a Jira-style User Story ID."
             echo ""
             echo "Example PR title:"
             echo "CJS-2: Implement Simple Login Page"
             echo ""
             echo "Example branch:"
-            echo "feature/CJS-2"
+            echo "feature/CJS-2-login"
             exit 1
           fi
 
@@ -123,11 +132,17 @@ jobs:
             echo "$ARTIFACT_DIR"
             echo ""
             echo "Available artifact directories:"
-            find docs/artifacts \
-              -maxdepth 1 \
-              -mindepth 1 \
-              -type d \
-              -print || true
+
+            if [[ -d "docs/artifacts" ]]; then
+              find docs/artifacts \
+                -maxdepth 1 \
+                -mindepth 1 \
+                -type d \
+                -print || true
+            else
+              echo "docs/artifacts directory does not exist."
+            fi
+
             exit 1
           fi
 
