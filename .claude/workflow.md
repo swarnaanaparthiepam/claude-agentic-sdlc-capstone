@@ -20,7 +20,7 @@ This workflow sequences Phases 00-08, enforcing human approval after every phase
 8. **Phase 07: Verification** - Verify and test → verification.md
 9. **Phase 08: PR** - Create pull request → GitHub PR
 
-**Note:** Confluence publishing is handled automatically by GitHub Actions after PR merge (not part of the SDLC phases).
+**Note:** Confluence publishing is handled automatically by GitHub Actions when the PR is opened, synchronized, or reopened (not part of the SDLC phases).
 
 ## Coordination Logic
 
@@ -256,7 +256,8 @@ def create_initial_status(user_story_id):
         "Last Updated": today(),
         "Notes": [f"Workflow initialized for {user_story_id} on {today()}"],
         "PR Information": "",
-        "Confluence Status": "(Published automatically by GitHub Actions after PR merge)"
+        "Confluence Status": "(Published automatically by GitHub Actions when PR is opened)"
+
     }
 ```
 
@@ -311,7 +312,7 @@ report(
     f"All artifacts: {artifact_dir}\n\n"
     f"Next steps:\n"
     f"1. Review and merge PR\n"
-    f"2. Confluence publishing happens automatically via GitHub Actions\n"
+    f"2. Confluence publishing happens automatically via GitHub Actions when the PR is opened, synchronized, or reopened\n"
     f"3. Close Jira ticket\n"
 )
 ```
@@ -355,8 +356,11 @@ report(
 
 ### With GitHub Actions
 - Workflow creates PR (Phase 08)
+- Opening the PR triggers Confluence publishing
+- Synchronizing the PR triggers Confluence publishing
+- Reopening the PR triggers Confluence publishing
 - GitHub Actions publish to Confluence
-- status.md updated with Confluence URL
+- Confluence publication status is reported in the GitHub Actions workflow summary
 
 ## Notes
 
