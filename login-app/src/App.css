@@ -1,1 +1,27 @@
-/* App-level styles cleared per Task 3 - LoginPage will have its own CSS Module */
+/**
+ * App Component Styles
+ *
+ * Requirements: NFR-2 (UI Usability)
+ * Design: Task 9 from impl-plan.md (Styling and Visual Polish)
+ * Task 6 AC9: Basic layout styling with centered content and padding
+ */
+
+.app-container {
+  /* Centered layout with adequate whitespace */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+
+  /* Background */
+  background-color: #f8f9fa;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 320px) {
+  .app-container {
+    padding: 10px;
+  }
+}
