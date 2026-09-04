@@ -48,7 +48,6 @@ jobs:
 
           files=(
             ".claude/workflow.md"
-            ".claude/mcp.json"
             ".claude/instructions/shared.md"
             ".claude/skills/artifact-validation.md"
             ".gitignore"
