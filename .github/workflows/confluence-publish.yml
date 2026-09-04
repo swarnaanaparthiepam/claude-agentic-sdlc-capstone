@@ -44,7 +44,7 @@ jobs:
       # --------------------------------------------------
       # 3. Extract User Story ID
       # --------------------------------------------------
-      - name: Extract User Story ID
+            - name: Extract User Story ID
         id: extract_id
         shell: bash
         run: |
@@ -54,66 +54,46 @@ jobs:
 
             USER_STORY_ID="${{ github.event.inputs.user_story_id }}"
 
-          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          else
 
-            PR_TITLE="${{ github.event.pull_request.title }}"
-            PR_BRANCH="${{ github.event.pull_request.head.ref }}"
+            echo "Detecting User Story ID from artifact directories..."
 
-            echo "PR Title: $PR_TITLE"
-            echo "PR Branch: $PR_BRANCH"
+            ARTIFACT_ROOT="docs/artifacts"
 
-            # --------------------------------------------
-            # First try to extract Jira ID from PR title.
+            # Find directories directly under docs/artifacts.
+            # Example:
+            # docs/artifacts/CJS-2
+            #            └── CJS-2 = User Story ID
             #
-            # Examples:
-            #   CJS-2: Implement Login
-            #   CJS-15: Add Dashboard
-            #   ABC-123: Update API
-            # --------------------------------------------
+            # Ignore files and hidden directories.
             USER_STORY_ID=$(
-              echo "$PR_TITLE" |
-              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+              find "$ARTIFACT_ROOT" \
+                -mindepth 1 \
+                -maxdepth 1 \
+                -type d \
+                -printf '%f\n' |
+              grep -E '^[A-Z][A-Z0-9]+-[0-9]+$' |
               head -1 ||
               true
             )
 
-            # --------------------------------------------
-            # If PR title does not contain an ID,
-            # try the source branch.
-            #
-            # Examples:
-            #   feature/CJS-2-login
-            #   feature/CJS-15-dashboard
-            #   bugfix/ABC-123-fix
-            # --------------------------------------------
-            if [[ -z "$USER_STORY_ID" ]]; then
-
-              USER_STORY_ID=$(
-                echo "$PR_BRANCH" |
-                grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
-                head -1 ||
-                true
-              )
-
-            fi
-
           fi
 
-          # --------------------------------------------
-          # Make sure we found an ID.
-          # --------------------------------------------
           if [[ -z "$USER_STORY_ID" ]]; then
-
             echo "ERROR: Could not determine User Story ID."
             echo ""
-            echo "The User Story ID must appear in either:"
-            echo "  1. The PR title"
-            echo "  2. The PR source branch"
+            echo "Expected an artifact directory such as:"
+            echo "  docs/artifacts/CJS-2/"
+            echo "  docs/artifacts/CJS-10/"
+            echo "  docs/artifacts/ABC-123/"
             echo ""
-            echo "Examples:"
-            echo "  CJS-2: Implement Simple Login Page"
-            echo "  feature/CJS-15-user-registration"
-            echo "  bugfix/ABC-123-login-error"
+            echo "Available artifact directories:"
+            find docs/artifacts \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -type d \
+              -printf '  %f\n' ||
+              true
 
             exit 1
           fi
