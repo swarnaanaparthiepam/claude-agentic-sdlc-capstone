@@ -23,14 +23,24 @@ jobs:
        github.event.pull_request.merged == true)
 
     steps:
+
+      # --------------------------------------------------
+      # 1. Checkout repository
+      # --------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # 2. Setup Node.js
+      # --------------------------------------------------
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
+      # --------------------------------------------------
+      # 3. Extract User Story ID
+      # --------------------------------------------------
       - name: Extract User Story ID
         id: extract_id
         shell: bash
@@ -38,6 +48,9 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             USER_STORY_ID="${{ github.event.inputs.user_story_id }}"
           else
+            # Extract from PR title.
+            # Expected format:
+            # CJS-2: Implement Simple Login Page
             PR_TITLE="${{ github.event.pull_request.title }}"
             USER_STORY_ID=$(echo "$PR_TITLE" | grep -oE "CJS-[0-9]+" | head -1 || echo "")
           fi
@@ -48,66 +61,112 @@ jobs:
           fi
 
           echo "user_story_id=$USER_STORY_ID" >> "$GITHUB_OUTPUT"
-          echo "Publishing artifacts for: $USER_STORY_ID"
 
+          echo "==========================================="
+          echo "User Story ID: $USER_STORY_ID"
+          echo "==========================================="
+
+      # --------------------------------------------------
+      # 4. Validate artifacts
+      # --------------------------------------------------
       - name: Validate artifacts exist
+        shell: bash
         run: |
           USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
           ARTIFACT_DIR="docs/artifacts/$USER_STORY_ID"
+
+          echo "Checking artifact directory:"
+          echo "$ARTIFACT_DIR"
 
           if [[ ! -d "$ARTIFACT_DIR" ]]; then
             echo "ERROR: Artifact directory not found: $ARTIFACT_DIR"
             exit 1
           fi
 
-          echo "Found artifact directory: $ARTIFACT_DIR"
+          echo "Artifact directory found."
+          echo ""
+          echo "Artifacts:"
           ls -la "$ARTIFACT_DIR"
 
+      # --------------------------------------------------
+      # 5. Publish to Confluence
+      # --------------------------------------------------
       - name: Publish to Confluence
-        run: node tools/confluence/publisher.mjs
+        shell: bash
+        run: |
+          echo "==========================================="
+          echo "Publishing to Confluence"
+          echo "==========================================="
+          echo "User Story: $USER_STORY_ID"
+          echo "Space Key: $CONFLUENCE_SPACE_KEY"
+          echo "==========================================="
+
+          node tools/confluence/publisher.mjs
         env:
           USER_STORY_ID: ${{ steps.extract_id.outputs.user_story_id }}
+
           CONFLUENCE_URL: ${{ secrets.CONFLUENCE_URL }}
           CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
           CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
+
+          # Confluence space key
           CONFLUENCE_SPACE_KEY: claudecaps
 
+      # --------------------------------------------------
+      # 6. Commit publication status
+      # --------------------------------------------------
       - name: Commit confluence-status.json
+        shell: bash
         run: |
           USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
           STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
 
           if [[ -f "$STATUS_FILE" ]]; then
+            echo "Publication status file found:"
+            cat "$STATUS_FILE"
+
             git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
             git add "$STATUS_FILE"
 
-            git commit -m "docs: add Confluence publication status for $USER_STORY_ID" \
+            git commit \
+              -m "docs: add Confluence publication status for $USER_STORY_ID" \
               || echo "No changes to commit"
 
             git push || echo "Nothing to push"
+          else
+            echo "WARNING: Confluence status file was not created."
           fi
 
+      # --------------------------------------------------
+      # 7. Workflow Summary
+      # --------------------------------------------------
       - name: Summary
+        shell: bash
         run: |
           USER_STORY_ID="${{ steps.extract_id.outputs.user_story_id }}"
           STATUS_FILE="docs/artifacts/$USER_STORY_ID/confluence-status.json"
 
-          echo "## Publication Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Confluence Publication Summary" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**User Story:** $USER_STORY_ID" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [[ -f "$STATUS_FILE" ]]; then
-            URL=$(jq -r '.url' "$STATUS_FILE")
-            TIMESTAMP=$(jq -r '.timestamp' "$STATUS_FILE")
+            URL=$(jq -r '.url // empty' "$STATUS_FILE")
+            TIMESTAMP=$(jq -r '.timestamp // empty' "$STATUS_FILE")
+            PAGE_ID=$(jq -r '.pageId // empty' "$STATUS_FILE")
 
             echo "**Status:** ✅ Published" >> "$GITHUB_STEP_SUMMARY"
-            echo "**URL:** [$URL]($URL)" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Page ID:** $PAGE_ID" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**URL:** $URL" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "**Timestamp:** $TIMESTAMP" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "**Status:** ❌ Failed" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Status:** ❌ Publication failed" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
