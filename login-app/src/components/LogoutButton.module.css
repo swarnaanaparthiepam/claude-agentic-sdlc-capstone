@@ -1,0 +1,70 @@
+/**
+ * LogoutButton Component Styles
+ *
+ * Requirements: NFR-2 (UI Usability)
+ * Design: Task 9 from impl-plan.md (Styling and Visual Polish)
+ * Accessibility: Design Review Major Issue #1 (focus state)
+ */
+
+.logoutButton {
+  /* Clear button styling with visual affordance */
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #bd2130;
+  border-radius: 4px;
+
+  /* Adequate spacing */
+  padding: 10px 20px;
+  margin: 8px 0;
+
+  /* Typography */
+  font-size: 16px;
+  font-weight: 500;
+  font-family: inherit;
+  line-height: 1.5;
+
+  /* Pointer cursor for hover */
+  cursor: pointer;
+
+  /* Smooth transitions */
+  transition: all 0.2s ease-in-out;
+
+  /* Visual polish */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover state for visual feedback */
+.logoutButton:hover {
+  background-color: #c82333;
+  border-color: #a71d2a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Focus state for keyboard accessibility */
+.logoutButton:focus {
+  outline: 2px solid #0056b3;
+  outline-offset: 2px;
+}
+
+/* Active/pressed state */
+.logoutButton:active {
+  background-color: #bd2130;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px);
+}
+
+/* Disabled state (not used in this implementation, but for completeness) */
+.logoutButton:disabled {
+  background-color: #6c757d;
+  border-color: #545b62;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 320px) {
+  .logoutButton {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+}
