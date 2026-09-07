@@ -27,23 +27,23 @@ describe('App', () => {
     // LogoutButton should be visible
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
 
-    // SuccessMessage should NOT be visible
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    // SuccessMessage should NOT be visible (use test-id to distinguish from StatusMessage)
+    expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
   });
 
   it('displays SuccessMessage after clicking Logout button', async () => {
     const user = userEvent.setup();
     render(<App />);
 
-    // Initially, success message is not visible
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    // Initially, success message is not visible (use test-id to distinguish from StatusMessage)
+    expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
 
     // Click the Logout button
     const logoutButton = screen.getByRole('button', { name: /logout/i });
     await user.click(logoutButton);
 
     // Success message should now be visible with exact text
-    const successMessage = screen.getByRole('status');
+    const successMessage = screen.getByTestId('success-message');
     expect(successMessage).toBeInTheDocument();
     expect(successMessage).toHaveTextContent('Logged out successfully');
   });
@@ -85,7 +85,7 @@ describe('App', () => {
     // Step 1: Initial state - LoginPage and LogoutButton visible
     expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('success-message')).not.toBeInTheDocument();
 
     // Step 2: User clicks Logout
     const logoutButton = screen.getByRole('button', { name: /logout/i });
@@ -94,8 +94,8 @@ describe('App', () => {
     // Step 3: Final state - Only SuccessMessage visible
     expect(screen.queryByRole('heading', { name: /login/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /logout/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Logged out successfully');
+    expect(screen.getByTestId('success-message')).toBeInTheDocument();
+    expect(screen.getByTestId('success-message')).toHaveTextContent('Logged out successfully');
   });
 
   it('state management works correctly (isLoggedIn toggles)', async () => {
@@ -110,6 +110,6 @@ describe('App', () => {
 
     // Verify state change reflected in UI
     expect(screen.queryByRole('button', { name: /logout/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByTestId('success-message')).toBeInTheDocument();
   });
 });
