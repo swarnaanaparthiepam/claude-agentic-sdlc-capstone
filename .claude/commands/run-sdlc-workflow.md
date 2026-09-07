@@ -1,5 +1,5 @@
 ---
-name: workflow
+name: run-sdlc-workflow
 description: Execute the complete 8-phase SDLC workflow with human approval gates
 args: <USER_STORY_ID>
 ---
@@ -8,7 +8,7 @@ args: <USER_STORY_ID>
 
 **Purpose:** Coordinate the 8-phase SDLC pipeline with human approval gates between each phase.
 
-**Usage:** `/workflow <USER_STORY_ID>`
+**Usage:** `/run-sdlc-workflow <USER_STORY_ID>`
 
 ## Overview
 
@@ -186,7 +186,7 @@ Next steps:
 
 ### Resume from Interruption
 - Read status.md to determine current phase
-- Re-invoke: `/workflow <USER_STORY_ID>`
+- Re-invoke: `/run-sdlc-workflow <USER_STORY_ID>`
 - Workflow continues from current phase
 
 ### Skip Approval (Emergency)
