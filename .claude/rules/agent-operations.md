@@ -32,7 +32,7 @@ This file defines operational rules for all phase agents (00-08) in the SDLC wor
 ### Human Approval Gates
 - Respect human approval gates
 - Do NOT proceed to the next phase while approval is pending
-- Only workflow.md manages phase transitions
+- Only workflow commands manage phase transitions
 - Phase agents never self-approve or approve other phases
 
 ### Safe Failure
@@ -43,7 +43,7 @@ This file defines operational rules for all phase agents (00-08) in the SDLC wor
 
 ### Independent Runnability
 - **ALL phase agents support two invocation modes:**
-  1. **Workflow Mode:** Invoked by workflow.md with full orchestration
+  1. **Workflow Mode:** Invoked by workflow commands with full orchestration
   2. **Standalone Mode:** Invoked directly by users with User Story ID
 - Each phase agent validates only the dependencies required for its phase
 - Phase agents extract User Story ID from prompt/parameter in standalone mode
@@ -66,12 +66,12 @@ This file defines operational rules for all phase agents (00-08) in the SDLC wor
 - Modify Jira issues (read-only access)
 
 ### Status.md Updates
-- **Workflow Mode:** workflow.md manages status.md updates (not phase agents)
+- **Workflow Mode:** Workflow commands manage status.md updates (not phase agents)
 - **Standalone Mode:** Phase agents do NOT update status.md (user manages state)
 - Phase agents report completion differently per mode:
-  - Workflow: Report to workflow (brief summary)
+  - Workflow: Report to workflow command (brief summary)
   - Standalone: Report to user (detailed next steps)
-- workflow.md validates artifacts and updates state in workflow mode
+- Workflow commands validate artifacts and update state in workflow mode
 
 ## Artifact Templates
 
@@ -232,12 +232,12 @@ Recovery: Phase XX must regenerate artifact with all required sections.
 ## Workflow Integration
 
 ### Workflow Mode
-- Phase agents invoked BY workflow.md via Agent tool
+- Phase agents invoked BY workflow commands via Agent tool
 - Agents receive User Story ID via prompt
 - Agents return completion status and artifact location to workflow
 - Agents report failures/blockers to workflow
-- workflow.md handles all status.md updates
-- workflow.md enforces approval gates
+- Workflow commands handle all status.md updates
+- Workflow commands enforce approval gates
 
 ### Standalone Mode
 - Phase agents invoked directly by users

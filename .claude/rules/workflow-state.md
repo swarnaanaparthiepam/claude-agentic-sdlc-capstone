@@ -73,7 +73,7 @@ IN_PROGRESS (Phase 08) → PR created → COMPLETE
 
 ## Update Responsibilities
 
-### workflow.md (ONLY)
+### Workflow Commands (ONLY)
 - Updates `status.md` after each phase
 - Records completed phases
 - Sets pending approval state
@@ -147,7 +147,7 @@ IN_PROGRESS (Phase 08) → PR created → COMPLETE
 - No automatic advancement
 
 ❌ **Modify state from agents**
-- Only workflow.md updates state
+- Only workflow commands update state
 - Agents are stateless
 
 ❌ **Hardcode phase progression**
