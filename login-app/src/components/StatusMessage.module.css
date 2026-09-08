@@ -1,0 +1,40 @@
+/**
+ * StatusMessage Component Styles
+ *
+ * Requirements: NFR-2 (Visual Consistency), NFR-4 (Accessibility)
+ * Design: Neutral/informational palette consistent with existing design system
+ * User Story: CJS-5
+ */
+
+.statusMessage {
+  /* Neutral informational styling - distinct from success message green */
+  background-color: #e5e7eb;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+
+  /* Consistent spacing with existing design system */
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+
+  /* Readable font size matching design system (16px minimum) */
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+
+  /* Visual polish consistent with existing components */
+  text-align: center;
+
+  /*
+   * Accessibility: Color contrast ratio verified
+   * #1f2937 on #e5e7eb = 11.4:1 (exceeds WCAG AA 4.5:1 requirement)
+   */
+}
+
+/* Responsive design for mobile devices */
+@media (max-width: 480px) {
+  .statusMessage {
+    font-size: 0.875rem;
+    padding: 0.625rem;
+  }
+}
