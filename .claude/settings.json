@@ -5,18 +5,13 @@
   "permissions": {
     "allow": [
       "Read",
-      "Write:docs/artifacts/**",
       "Bash:git status",
       "Bash:git branch",
       "Bash:git log",
       "Bash:npm run",
       "Bash:node"
     ],
-    "deny": [
-      "Write:.claude/mcp.json",
-      "Write:.env",
-      "Write:.env.local"
-    ]
+    "deny": []
   },
 
   "agents": {
