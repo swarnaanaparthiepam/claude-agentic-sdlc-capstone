@@ -1,0 +1,69 @@
+{
+  "$schema": "https://claude.ai/schemas/settings-v1.json",
+  "description": "Project-level Claude Code settings for SDLC workflow",
+
+  "permissions": {
+    "allow": [
+      "read:docs/**",
+      "read:.claude/**",
+      "write:docs/artifacts/**",
+      "bash:git status",
+      "bash:git branch",
+      "bash:git log",
+      "bash:npm run",
+      "bash:node"
+    ],
+    "deny": [
+      "write:.claude/mcp.json",
+      "write:.env",
+      "write:.env.local"
+    ]
+  },
+
+  "hooks": {
+    "pre-commit": {
+      "command": "bash .claude/hooks/check-secrets.sh",
+      "description": "Scan for secrets before allowing commits",
+      "enabled": true
+    }
+  },
+
+  "agents": {
+    "timeout": 300000,
+    "maxConcurrent": 3
+  },
+
+  "workflow": {
+    "requireApproval": true,
+    "autoAdvance": false,
+    "artifactPath": "docs/artifacts"
+  },
+
+  "integrations": {
+    "jira": {
+      "enabled": true,
+      "mcpServer": "atlassian"
+    },
+    "github": {
+      "enabled": true,
+      "defaultReviewers": []
+    }
+  },
+
+  "security": {
+    "secretsScanning": true,
+    "tokenMasking": "!@#$$$#@",
+    "forbiddenFiles": [
+      "mcp.json",
+      ".claude/mcp.json",
+      ".env",
+      ".env.local"
+    ]
+  },
+
+  "codeQuality": {
+    "linting": true,
+    "formatting": true,
+    "testCoverage": 80
+  }
+}

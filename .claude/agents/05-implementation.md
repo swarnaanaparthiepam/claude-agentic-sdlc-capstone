@@ -240,3 +240,27 @@ Before reporting complete:
 - **Reads:** impl-plan.md, architecture.md, requirements.md
 - **Creates:** Application code, tests, feature branch
 - **Next Phase:** 06-review (after human approval)
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skill: Developer Expertise
+**Reference:** `.claude/skills/developer-expertise.md`
+
+This agent leverages Software Developer expertise when implementing code:
+- **Code Quality:** Clean code principles, SOLID principles, naming conventions
+- **Security:** Input validation, authentication/authorization, password security, SQL injection prevention, XSS prevention
+- **Testing:** Unit tests (>80% coverage), integration tests, E2E tests
+- **Error Handling:** Try-catch patterns, custom error classes, meaningful error messages
+- **Performance:** Database optimization, frontend performance, API design
+- **Code Review:** Functionality, security, testing, code quality, performance
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - Artifact templates
+- **Code Quality:** `.claude/rules/code-quality.md` - Complete coding standards
+- **Security:** `.claude/rules/secrets.md` - Security guidelines
+- **Git Workflow:** `.claude/rules/git.md` - Commit and branching practices
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks

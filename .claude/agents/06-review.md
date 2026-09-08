@@ -196,3 +196,25 @@ type: agent
 - **Reads:** Feature branch code, impl-plan.md
 - **Creates:** review.md
 - **Next Phase:** 07-verification (if approved) or back to 05-implementation
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skill: Developer Expertise (Code Review)
+**Reference:** `.claude/skills/developer-expertise.md` (Section 6: Code Review Checklist)
+
+This agent leverages Developer expertise when reviewing code:
+- **Functionality:** Code correctness, edge cases, error handling
+- **Security:** Input validation, SQL injection, XSS, auth/authz, no hardcoded secrets
+- **Testing:** Unit tests, integration tests, coverage, meaningful tests
+- **Code Quality:** Naming conventions, function size, no duplication, proper error handling
+- **Performance:** Efficient algorithms, optimized queries, no memory leaks
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - Review artifact template
+- **Code Quality:** `.claude/rules/code-quality.md` - Complete quality standards
+- **Security:** `.claude/rules/secrets.md` - Security checklist
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks

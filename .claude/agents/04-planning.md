@@ -135,3 +135,25 @@ Tasks on critical path (no slack):
 - **Reads:** architecture.md, design-review.md, requirements.md
 - **Creates:** impl-plan.md
 - **Next Phase:** 05-implementation
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skills
+- **Developer Expertise:** `.claude/skills/developer-expertise.md` - Technical task breakdown
+- **Architect Expertise:** `.claude/skills/architect-expertise.md` - Component decomposition
+
+This agent creates implementation plans by:
+- **Task Decomposition:** Break architecture into implementable tasks
+- **Dependency Identification:** Map task dependencies
+- **Estimation:** Size tasks appropriately
+- **Sequencing:** Order tasks for efficient execution
+- **Risk Assessment:** Identify critical path and risks
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - impl-plan.md template
+- **Git Workflow:** `.claude/rules/git.md` - Branching and commit strategy
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks

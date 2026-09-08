@@ -143,3 +143,26 @@ type: agent
 - **Reads:** architecture.md, requirements.md
 - **Creates:** design-review.md
 - **Next Phase:** 04-planning
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skill: Architect Expertise (Review)
+**Reference:** `.claude/skills/architect-expertise.md` (Sections on Trade-offs, NFRs, Anti-Patterns)
+
+This agent reviews architectural decisions for:
+- **Pattern Appropriateness:** Is chosen pattern suitable for requirements?
+- **Technology Fit:** Are technology choices justified and appropriate?
+- **NFR Coverage:** Are all non-functional requirements addressed?
+- **Scalability:** Can the design scale as needed?
+- **Security:** Are security considerations adequate?
+- **Trade-offs:** Are trade-offs clearly documented and reasonable?
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - design-review.md template
+- **Code Quality:** `.claude/rules/code-quality.md` - Quality standards
+- **Security:** `.claude/rules/secrets.md` - Security requirements
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks

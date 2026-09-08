@@ -242,3 +242,14 @@ Recovery: Check file permissions, ensure docs/artifacts/ exists.
 - **Called By:** workflow.md via Agent tool OR invoked directly
 - **Calls:** Atlassian MCP (jira_get_issue tool)
 - **Next Phase:** 01-requirements (after human approval)
+
+---
+
+## Skills & Expertise Integration
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Phase dependencies
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - status.md and user-story.md templates
+- **Security:** `.claude/rules/secrets.md` - Never commit Jira credentials

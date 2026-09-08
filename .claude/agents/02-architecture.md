@@ -210,3 +210,26 @@ Recovery:
 - **Reads:** requirements.md, user-story.md
 - **Creates:** architecture.md
 - **Next Phase:** 03-design-review (after human approval)
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skill: Architect Expertise
+**Reference:** `.claude/skills/architect-expertise.md`
+
+This agent leverages Solution Architect expertise when designing systems:
+- **Architectural Patterns:** Layered, MVC, Microservices, Event-Driven
+- **Technology Selection:** Frontend frameworks, backend frameworks, database choice
+- **NFR Handling:** Performance, scalability, security, availability, maintainability
+- **Data Flow Design:** Synchronous, asynchronous, event-driven patterns
+- **Integration Patterns:** REST API, GraphQL, webhooks, message queues
+- **Trade-off Analysis:** Monolith vs microservices, SQL vs NoSQL, sync vs async
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - Artifact templates
+- **Code Quality:** `.claude/rules/code-quality.md` - Technical standards
+- **Security:** `.claude/rules/secrets.md` - Security requirements
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks

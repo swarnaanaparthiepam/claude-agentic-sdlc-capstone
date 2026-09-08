@@ -8,6 +8,21 @@ This is an Agentic SDLC Capstone project demonstrating a complete 8-phase Softwa
 
 ## Architecture
 
+### Repository Structure
+```
+.claude/
+├── agents/        - Phase agents (00-08)
+├── commands/      - Workflow commands
+├── hooks/         - Git hooks (pre-commit)
+├── rules/         - All workflow rules (agent-ops, security, git, state, quality)
+├── skills/        - Validation skills
+├── settings.json  - Project settings
+└── workflow.md    - SDLC coordinator
+
+context/           - Runtime workflow context
+docs/artifacts/    - Per-story SDLC artifacts
+```
+
 ### Workflow Coordination
 - `.claude/workflow.md` is the SDLC coordinator
 - Sequences Phases 00-08 with human approval gates
@@ -61,8 +76,15 @@ This is an Agentic SDLC Capstone project demonstrating a complete 8-phase Softwa
 6. **Never update status.md** - Only workflow.md manages state
 7. **Provide recovery guidance** - Clear error messages with next steps
 
-### Shared Instructions
-- All agents follow `.claude/instructions/shared.md`
+### Rules & Standards
+All agents and workflows follow `.claude/rules/`:
+- **Agent operations:** `.claude/rules/agent-operations.md` (agent behavior, artifacts, templates)
+- **Security rules:** `.claude/rules/secrets.md` (credential management)
+- **Git rules:** `.claude/rules/git.md` (branch strategy, commits, PRs)
+- **State rules:** `.claude/rules/workflow-state.md` (status.md management)
+- **Quality rules:** `.claude/rules/code-quality.md` (coding standards, testing)
+
+Key principles:
 - Dynamic User Story IDs (never hardcoded)
 - Artifact isolation per story
 - Traceability from requirements to implementation
@@ -159,19 +181,21 @@ docs/artifacts/<USER_STORY_ID>/
 ### Do NOT
 - Skip phases or approval gates
 - Auto-approve any phase
-- Invoke phase agents directly (use workflow.md)
 - Hardcode User Story IDs
 - Modify approved artifacts without human direction
 - Create artifacts outside `docs/artifacts/<USER_STORY_ID>/`
 - Mix artifacts from different User Stories
+- Commit secrets (see `.claude/rules/secrets.md`)
+- Update `status.md` from phase agents (only workflow.md)
 
 ### DO
-- Use workflow.md as single entry point
+- Use workflow.md as single entry point (or invoke phases directly)
 - Check status.md before every action
 - Validate prerequisites before each phase
 - Create clear, traceable artifacts
 - Report blockers and halt safely
-- Update status.md after every phase
+- Update status.md after every phase (workflow.md only)
+- Follow rules in `.claude/rules/`
 
 ## Phase Sequence
 
@@ -228,38 +252,15 @@ Phase 05 agent will create the application structure, source code, and tests bas
 
 **CRITICAL RULES - NEVER VIOLATE:**
 
-1. **NEVER commit `mcp.json` or `.claude/mcp.json`** - These files contain MCP server credentials and must NEVER be pushed to git
-2. **NEVER commit `.env` files** - Environment variables contain secrets
-3. **Token Masking Policy:** If you discover any token/credential in code:
-   - STOP and do not commit the file
-   - Replace with `!@#$$$#@` or `${ENVIRONMENT_VARIABLE}`
-   - Alert immediately
-   - Use `git filter-branch` to remove from history if already committed
-4. **Always use environment variables** for credentials in config files
-5. **Template Pattern:** Use `.example` files (e.g., `mcp.json.example`) with placeholders
+See **`.claude/rules/secrets.md`** for complete security guidelines.
 
-**GitHub Push Protection:**
-- GitHub will block pushes containing detected secrets
-- Do NOT bypass without proper review and remediation
-- See `SECURITY.md` for complete incident response procedures
+**Quick Reference:**
+1. **NEVER commit:** `mcp.json`, `.env`, `.claude/settings.local.json`
+2. **Token Masking:** Replace with `!@#$$$#@` or `${ENV_VAR}`
+3. **Pre-commit Hook:** `.claude/hooks/check-secrets.sh` scans for secrets
+4. **Protected Files:** Listed in `.gitignore`
 
-**What to do if credentials are exposed:**
-1. Revoke the token immediately
-2. Remove from git history using `git filter-branch`
-3. Force push to overwrite remote
-4. Document the incident
-5. See `SECURITY.md` for detailed steps
-
-**Protected Files:**
-- `mcp.json` - MCP server credentials (in .gitignore)
-- `.claude/mcp.json` - Claude MCP config (in .gitignore)
-- `.env` - Environment variables (in .gitignore)
-- `.env.local` - Local overrides (in .gitignore)
-
-**Credential Storage:**
-- Local Development: Use `.env` file (gitignored)
-- CI/CD: Use GitHub Secrets
-- Production: Use secure vault (AWS Secrets Manager, Azure Key Vault)
+**GitHub Push Protection:** Blocks pushes with detected secrets. See `SECURITY.md` for incident response.
 
 ## Workflow Completion
 

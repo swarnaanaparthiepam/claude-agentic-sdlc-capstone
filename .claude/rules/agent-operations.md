@@ -1,4 +1,7 @@
-# Agentic SDLC Shared Instructions
+# Agent Operations Rules
+
+## Overview
+This file defines operational rules for all phase agents (00-08) in the SDLC workflow.
 
 ## Common Rules for All Phase Agents
 
@@ -228,21 +231,21 @@ Recovery: Phase XX must regenerate artifact with all required sections.
 
 ## Workflow Integration
 
-- **Workflow Mode:**
-  - Phase agents invoked BY workflow.md via Agent tool
-  - Agents receive User Story ID via prompt
-  - Agents return completion status and artifact location to workflow
-  - Agents report failures/blockers to workflow
-  - workflow.md handles all status.md updates
-  - workflow.md enforces approval gates
+### Workflow Mode
+- Phase agents invoked BY workflow.md via Agent tool
+- Agents receive User Story ID via prompt
+- Agents return completion status and artifact location to workflow
+- Agents report failures/blockers to workflow
+- workflow.md handles all status.md updates
+- workflow.md enforces approval gates
 
-- **Standalone Mode:**
-  - Phase agents invoked directly by users
-  - Agents extract User Story ID from user prompt
-  - Agents validate prerequisites themselves (not via workflow)
-  - Agents report completion details to user
-  - Agents do NOT update status.md
-  - Agents provide clear next-step guidance
+### Standalone Mode
+- Phase agents invoked directly by users
+- Agents extract User Story ID from user prompt
+- Agents validate prerequisites themselves (not via workflow)
+- Agents report completion details to user
+- Agents do NOT update status.md
+- Agents provide clear next-step guidance
 
 ## Quality Standards
 

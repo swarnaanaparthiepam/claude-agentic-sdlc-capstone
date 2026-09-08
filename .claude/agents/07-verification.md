@@ -252,3 +252,25 @@ Recovery: Fix environment, retry verification.
 - **Reads:** Feature branch, requirements.md, review.md
 - **Creates:** verification.md
 - **Next Phase:** 08-pr (if PASS) or back to 05-implementation
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skills
+- **Developer Expertise:** `.claude/skills/developer-expertise.md` (Section 3: Testing Standards)
+- **BA Expertise:** `.claude/skills/ba-expertise.md` - Requirements validation
+
+This agent verifies implementation against requirements:
+- **Requirements Coverage:** Every FR and NFR validated
+- **Test Execution:** Run all tests (unit, integration, E2E)
+- **Acceptance Criteria:** Verify all AC met
+- **Edge Cases:** Confirm error scenarios handled
+- **Performance:** Validate NFR metrics met
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - verification.md template
+- **Code Quality:** `.claude/rules/code-quality.md` - Testing standards
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks

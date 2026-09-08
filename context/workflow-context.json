@@ -1,0 +1,56 @@
+{
+  "description": "Runtime context for SDLC workflow execution",
+  "purpose": "Store ephemeral workflow state and metadata during execution",
+  "note": "This is NOT the source of truth - status.md is. This file holds temporary context.",
+  "schema": {
+    "currentWorkflow": {
+      "userStoryId": "string",
+      "startedAt": "ISO timestamp",
+      "sessionId": "string",
+      "mode": "workflow|standalone"
+    },
+    "environment": {
+      "nodeVersion": "string",
+      "platform": "string",
+      "workingDirectory": "string"
+    },
+    "integrations": {
+      "jira": {
+        "connected": "boolean",
+        "lastSync": "ISO timestamp"
+      },
+      "github": {
+        "connected": "boolean",
+        "repository": "string",
+        "defaultBranch": "string"
+      }
+    },
+    "metrics": {
+      "totalWorkflows": "number",
+      "completedPhases": "number",
+      "averagePhaseTime": "number (seconds)"
+    }
+  },
+  "currentWorkflow": null,
+  "environment": {
+    "nodeVersion": "unknown",
+    "platform": "win32",
+    "workingDirectory": "C:\\Users\\SwarnaAnaparthi\\claude-agentic-sdlc-capstone"
+  },
+  "integrations": {
+    "jira": {
+      "connected": false,
+      "lastSync": null
+    },
+    "github": {
+      "connected": true,
+      "repository": "swarnaanaparthiepam/claude-agentic-sdlc-capstone",
+      "defaultBranch": "main"
+    }
+  },
+  "metrics": {
+    "totalWorkflows": 0,
+    "completedPhases": 0,
+    "averagePhaseTime": 0
+  }
+}

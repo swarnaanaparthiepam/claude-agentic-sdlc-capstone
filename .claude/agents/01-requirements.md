@@ -336,3 +336,25 @@ Recovery: Provide answer, then retry Phase 01.
 - **Reads:** user-story.md
 - **Creates:** requirements.md
 - **Next Phase:** 02-architecture (after human approval)
+
+---
+
+## Skills & Expertise Integration
+
+### Primary Skill: BA Expertise
+**Reference:** `.claude/skills/ba-expertise.md`
+
+This agent leverages Business Analyst expertise when analyzing User Stories:
+- **Requirements Elicitation:** Use 5 Whys, user story mapping, stakeholder analysis
+- **Requirements Types:** Clear differentiation between FR and NFR
+- **INVEST Criteria:** Validate stories are Independent, Negotiable, Valuable, Estimable, Small, Testable
+- **Ambiguity Detection:** Identify vague terms, missing details, assumptions
+- **Gap Analysis:** Identify edge cases, error scenarios, integration points
+- **Traceability:** Link requirements back to acceptance criteria
+
+### Supporting Rules
+- **Agent Operations:** `.claude/rules/agent-operations.md` - Artifact templates
+- **Code Quality:** `.claude/rules/code-quality.md` - Testing standards inform requirements
+
+### Validation
+- **Artifact Validation:** `.claude/skills/artifact-validation.md` - Prerequisite checks
