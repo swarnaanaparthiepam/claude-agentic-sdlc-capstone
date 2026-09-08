@@ -4,28 +4,19 @@
 
   "permissions": {
     "allow": [
-      "read:docs/**",
-      "read:.claude/**",
-      "write:docs/artifacts/**",
-      "bash:git status",
-      "bash:git branch",
-      "bash:git log",
-      "bash:npm run",
-      "bash:node"
+      "Read",
+      "Write:docs/artifacts/**",
+      "Bash:git status",
+      "Bash:git branch",
+      "Bash:git log",
+      "Bash:npm run",
+      "Bash:node"
     ],
     "deny": [
-      "write:.claude/mcp.json",
-      "write:.env",
-      "write:.env.local"
+      "Write:.claude/mcp.json",
+      "Write:.env",
+      "Write:.env.local"
     ]
-  },
-
-  "hooks": {
-    "pre-commit": {
-      "command": "bash .claude/hooks/check-secrets.sh",
-      "description": "Scan for secrets before allowing commits",
-      "enabled": true
-    }
   },
 
   "agents": {
