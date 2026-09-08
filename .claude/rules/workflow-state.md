@@ -118,7 +118,7 @@ IN_PROGRESS (Phase 08) → PR created → COMPLETE
 ### Missing status.md
 ```bash
 # Re-run Phase 00 to recreate
-/workflow <USER_STORY_ID>
+/run-sdlc-workflow <USER_STORY_ID>
 ```
 
 ### Corrupted status.md

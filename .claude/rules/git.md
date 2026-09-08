@@ -126,7 +126,7 @@ Run before every commit:
 git checkout -b feature/CJS-2-login-page
 
 # Start workflow
-/workflow CJS-2
+/run-sdlc-workflow CJS-2
 ```
 
 ### During Development

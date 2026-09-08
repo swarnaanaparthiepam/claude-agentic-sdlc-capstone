@@ -54,7 +54,7 @@ This command sequences Phases 00-08, enforcing human approval after every phase.
 ### Approval Flow
 
 ```
-/workflow CJS-2   (first time)
+/run-sdlc-workflow CJS-2   (first time)
   ↓
 Phase 00 executes
   ↓
@@ -62,7 +62,7 @@ status.md: "Pending Human Approval: 00: Input"
   ↓
 Human reviews user-story.md
   ↓
-/workflow CJS-2   (approval via re-invocation)
+/run-sdlc-workflow CJS-2   (approval via re-invocation)
   ↓
 Workflow clears approval, marks 00 complete
   ↓
@@ -94,8 +94,8 @@ const PHASES = [
 ### Missing User Story ID
 ```
 ERROR: User Story ID is required.
-Usage: /workflow <USER_STORY_ID>
-Example: /workflow CJS-2
+Usage: /run-sdlc-workflow <USER_STORY_ID>
+Example: /run-sdlc-workflow CJS-2
 ```
 
 ### Blocked Phase

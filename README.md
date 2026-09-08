@@ -73,7 +73,7 @@ Add these secrets to your GitHub repository:
 
 ```bash
 # Start the workflow with a Jira User Story ID
-/workflow SCRUM-123
+/run-sdlc-workflow SCRUM-123
 ```
 
 The workflow will:
@@ -85,7 +85,7 @@ The workflow will:
 To continue after reviewing the artifact:
 ```bash
 # Re-invoke the workflow (implicit approval)
-/workflow SCRUM-123
+/run-sdlc-workflow SCRUM-123
 ```
 
 ### Monitor Progress with Dashboard
