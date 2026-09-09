@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from './LoginPage.module.css';
 import { StatusMessage } from './StatusMessage';
+import { LoginLoadedMessage } from './LoginLoadedMessage';
 
 /**
  * LoginPage Component
@@ -8,6 +9,7 @@ import { StatusMessage } from './StatusMessage';
  * Simple login form with email and password fields that uses mock authentication.
  * Displays success message after form submission.
  * Displays status message on page load (CJS-5).
+ * Displays login-loaded message on page load (CJS-6).
  *
  * Requirements: FR-1 through FR-7
  * Architecture: ADR-001 (Functional components), ADR-002 (No state management library),
@@ -48,6 +50,9 @@ export const LoginPage: React.FC = () => {
 
         {/* Status Message - CJS-5: FR-1 (Display status message on page load) */}
         <StatusMessage />
+
+        {/* Login Loaded Message - CJS-6: FR-1 */}
+        <LoginLoadedMessage />
 
         {/* Email Input - FR-1 */}
         <div className={styles.fieldGroup}>
