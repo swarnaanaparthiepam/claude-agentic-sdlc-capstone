@@ -63,7 +63,15 @@ Provide via prompt like: "Execute Phase 00 for User Story CJS-2"
 
 ### 2. Fetch from Jira
 ```
-- Use Atlassian MCP tool: jira_get_issue
+- Use the `atlassian-jira` MCP server ONLY (configured in .claude/mcp.json,
+  package @aashari/mcp-server-atlassian-jira, tool: mcp__atlassian-jira__jira_get).
+  Example: path "/rest/api/3/issue/<USER_STORY_ID>".
+- Do NOT use the "claude.ai Atlassian Rovo" MCP connector (tools like
+  getAccessibleAtlassianResources, searchJiraIssuesUsingJql, getJiraIssue) even
+  if it appears connected/authenticated. It is a separate OAuth-based
+  integration tied to the user's Claude.ai account permissions, not the
+  project's .env credentials, and has historically returned empty/access-denied
+  results for this project.
 - Pass User Story ID
 - Retrieve: summary, description, acceptance criteria, status, priority, assignee, reporter, created date, labels
 - If issue not found: report error and halt
@@ -203,10 +211,15 @@ Recovery: Verify User Story ID and retry.
 ```
 ERROR: Atlassian MCP not configured or not responding.
 Check:
-- .claude/mcp.json exists
-- Environment variables set (.env file)
-- MCP server is running
-Recovery: Configure MCP, ensure credentials are valid, retry.
+- .claude/mcp.json exists and defines the "atlassian" server
+  (@aashari/mcp-server-atlassian-jira)
+- .env has ATLASSIAN_SITE_NAME, ATLASSIAN_USER_EMAIL, ATLASSIAN_API_TOKEN set
+  (these are the exact names the package reads - not ATLASSIAN_INSTANCE_URL,
+  ATLASSIAN_EMAIL, JIRA_API_TOKEN, or JIRA_USER_EMAIL)
+- MCP server (`atlassian-jira`) is connected - run /mcp to check/reconnect
+- Confirm you are NOT relying on the "claude.ai Atlassian Rovo" connector;
+  it is a different integration and its auth state is irrelevant here
+Recovery: Configure MCP, ensure credentials are valid, reconnect via /mcp, retry.
 ```
 
 ### Artifact Directory Creation Failed
@@ -240,7 +253,7 @@ Recovery: Check file permissions, ensure docs/artifacts/ exists.
 ## Integration
 
 - **Called By:** workflow.md via Agent tool OR invoked directly
-- **Calls:** Atlassian MCP (jira_get_issue tool)
+- **Calls:** `atlassian-jira` MCP server only (tool: `mcp__atlassian-jira__jira_get`). Never the `claude.ai Atlassian Rovo` connector - see Section 2 above.
 - **Next Phase:** 01-requirements (after human approval)
 
 ---
